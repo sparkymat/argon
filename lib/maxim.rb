@@ -40,10 +40,13 @@ module Maxim
 
       define_method(action) do
         raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
-        self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
 
-        unless callback.nil?
-          self.send(callback, from: from, to: to)
+        self.with_lock do
+          self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
+
+          unless callback.nil?
+            self.send(callback, from: from, to: to)
+          end
         end
       end
     end
