@@ -1,5 +1,6 @@
 require 'maxim/version'
 require 'maxim/error'
+require 'maxim/invalid_transition_error'
 require 'active_support/concern'
 require 'active_support/inflector'
 require 'pry-byebug'
@@ -26,7 +27,7 @@ module Maxim
       end
 
       state_map.each_pair do |state_name, state_value|
-        scope state_name, -> { where("#{field} = ?", state_value) }
+        scope state_name, -> { where(field => state_value) }
 
         define_method("#{ state_name }?".to_sym) do
           self[field] == state_value
@@ -34,11 +35,17 @@ module Maxim
       end
     end
 
-    def add_state_transition(name, edge, *options)
-      @state_transitions[name] = {
-        edge: edge,
-        options: options
-      }
+    def add_state_transition(field:, action:, from:, to:, callback: nil)
+      raise Maxim::Error.new("method already defined") if self.instance_methods.include?(action)
+
+      define_method(action) do
+        raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
+        self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
+
+        unless callback.nil?
+          self.send(callback, from: from, to: to)
+        end
+      end
     end
   end
 end
