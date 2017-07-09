@@ -1,6 +1,7 @@
 require 'maxim/version'
 require 'maxim/error'
 require 'active_support/concern'
+require 'active_support/inflector'
 require 'pry-byebug'
 
 module Maxim
@@ -16,6 +17,10 @@ module Maxim
       state_map = mapping.values.first
       reverse_map = state_map.map{|v| [v[1],v[0]]}.to_h
 
+      define_singleton_method("#{ field.to_s.pluralize }") do
+        state_map
+      end
+
       define_method(field) do
         reverse_map[self[field]]
       end
@@ -27,6 +32,13 @@ module Maxim
           self[field] == state_value
         end
       end
+    end
+
+    def add_state_transition(name, edge, *options)
+      @state_transitions[name] = {
+        edge: edge,
+        options: options
+      }
     end
   end
 end

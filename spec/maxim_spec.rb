@@ -30,5 +30,7 @@ RSpec.describe Maxim do
     object = SampleClass.new(0)
     expect{ object.state }.to_not raise_error
     expect(object.state).to eq(:initialized)
+
+    expect(SampleClass).to respond_to(:states)
   end
 end
