@@ -50,7 +50,7 @@ module Maxim
       end
     end
 
-    def add_state_transition(field:, action:, from:, to:, transaction_callback: nil, post_transaction_callback: nil)
+    def add_state_transition(field:, action:, from:, to:, callback: nil)
       raise Maxim::Error.new("method already defined") if self.instance_methods.include?(action)
 
       @transition_edges           ||= {}
@@ -58,19 +58,19 @@ module Maxim
       @transition_edges[from][to] ||= []
       @transition_edges[from][to] << action
 
-      define_method(action) do
+      define_method(action) do |&block|
         raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
 
         self.with_lock do
           self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
 
-          unless transaction_callback.nil?
-            self.send(transaction_callback, from: from, to: to)
+          if block.present?
+            block.call
           end
         end
 
-        unless post_transaction_callback.nil?
-          self.send(post_transaction_callback, from: from, to: to)
+        unless callback.nil?
+          self.send(callback, from: from, to: to)
         end
       end
     end
