@@ -38,6 +38,11 @@ module Maxim
     def add_state_transition(field:, action:, from:, to:, transaction_callback: nil, post_transaction_callback: nil)
       raise Maxim::Error.new("method already defined") if self.instance_methods.include?(action)
 
+      @transition_edges ||= {}
+      @transition_edges[from] ||={}
+      @transition_edges[from][to] ||= []
+      @transition_edges[from][to] << action
+
       define_method(action) do
         raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
 
