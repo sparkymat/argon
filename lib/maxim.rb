@@ -26,23 +26,19 @@ module Maxim
         reverse_map[self[field]]
       end
 
-      define_method(:transition_edges) do
-        @transition_edges
-      end
-
       @transition_edges = {}
       state_map.keys.each{ |from| @transition_edges[from] = {} }
 
       define_method("available_#{field}_transitions") do
-        self.class.transition_edges[self.send(field)]
+        self.class.instance_variable_get(:@transition_edges)[self.send(field)]
       end
 
       define_method("available_#{field}_transitions_from") do |to|
-        self.class.transition_edges[self.send(field)][to] || []
+        self.class.instance_variable_get(:@transition_edges)[self.send(field)][to] || []
       end
 
       define_method("can_transition_#{field}?".to_sym) do |to:|
-        self.class.transition_edges[self.send(field)][to].present? && self.class.transition_edges[self.send(field)][to].length > 0
+        self.class.instance_variable_get(:@transition_edges)[self.send(field)][to].present? && self.class.instance_variable_get(:@transition_edges)[self.send(field)][to].length > 0
       end
 
       state_map.each_pair do |state_name, state_value|
@@ -57,6 +53,8 @@ module Maxim
     def add_state_transition(field:, action:, from:, to:, transaction_callback: nil, post_transaction_callback: nil)
       raise Maxim::Error.new("method already defined") if self.instance_methods.include?(action)
 
+      @transition_edges           ||= {}
+      @transition_edges[from]     ||= {}
       @transition_edges[from][to] ||= []
       @transition_edges[from][to] << action
 
