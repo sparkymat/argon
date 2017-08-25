@@ -26,21 +26,18 @@ module Maxim
         reverse_map[self[field]]
       end
 
-      @transition_edges ||= {}
-      @transition_edges[field] = {}
+      @transition_edges                ||= {}
+      @transition_edges[field]         ||= {}
+      @transition_edges[field][:edges] = {}
 
-      state_map.keys.each{ |from| @transition_edges[field][from] = {} }
+      state_map.keys.each{ |from| @transition_edges[field][:edges][from] = {} }
 
       define_method("available_#{field}_transitions") do
-        self.class.instance_variable_get(:@transition_edges)[field][self.send(field)]
-      end
-
-      define_method("available_#{field}_transitions_from") do |to|
-        self.class.instance_variable_get(:@transition_edges)[field][self.send(field)][to] || []
+        self.class.instance_variable_get(:@transition_edges)[field][:edges][self.send(field)]
       end
 
       define_method("can_transition_#{field}?".to_sym) do |to:|
-        self.class.instance_variable_get(:@transition_edges)[field][self.send(field)][to].present? && self.class.instance_variable_get(:@transition_edges)[field][self.send(field)][to].length > 0
+        self.class.instance_variable_get(:@transition_edges)[field][:edges][self.send(field)][to].present? && self.class.instance_variable_get(:@transition_edges)[field][:edges][self.send(field)][to].length > 0
       end
 
       state_map.each_pair do |state_name, state_value|
@@ -59,13 +56,14 @@ module Maxim
     def add_state_transition(field:, action:, from:, to:, in_lock_callback: nil, post_lock_callback: nil)
       raise Maxim::Error.new("method already defined") if self.instance_methods.include?(action)
 
-      @transition_edges                  ||= {}
-      @transition_edges[field]           ||= {}
-      @transition_edges[field][from]     ||= {}
+      @transition_edges                      ||= {}
+      @transition_edges[field]               ||= {}
+      @transition_edges[field][:edges]       ||= {}
+      @transition_edges[field][:edges][from] ||= {}
 
-      raise Maxim::Error.new("edge already defined") unless @transition_edges[field][from][to].nil?
+      raise Maxim::Error.new("edge already defined") unless @transition_edges[field][:edges][from][to].nil?
 
-      @transition_edges[field][from][to] = action
+      @transition_edges[field][:edges][from][to] = action
 
       define_method(action) do
         raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
