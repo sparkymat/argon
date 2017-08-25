@@ -36,11 +36,18 @@ module Maxim
 
       raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_event (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
       edges_list.each_with_index do |edge_details, index|
+        from         = edge_details[:from]
+        to           = edge_details[:to]
+        action       = edge_details[:action]
+        do_action    = "#{action}!".to_sym
+        check_action = "can_#{action}?".to_sym
+
         raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_event (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :post_lock_callback, :in_lock_callback, :on_event].to_set) && [:from, :to, :action].to_set.subset?(edge_details.keys.to_set)
-        raise Maxim::Error.new("`edges[#{index}].from` is not a valid state") unless states_map.keys.include?(edge_details[:from])
-        raise Maxim::Error.new("`edges[#{index}].to` is not a valid state") unless states_map.keys.include?(edge_details[:to])
-        raise Maxim::Error.new("`edges[#{index}].action` is not a Symbol") unless edge_details[:action].is_a?(Symbol)
-        raise Maxim::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{edge_details[:action]}` method already exists") if self.instance_methods.include?(edge_details[:action])
+        raise Maxim::Error.new("`edges[#{index}].from` is not a valid state") unless states_map.keys.include?(from)
+        raise Maxim::Error.new("`edges[#{index}].to` is not a valid state") unless states_map.keys.include?(to)
+        raise Maxim::Error.new("`edges[#{index}].action` is not a Symbol") unless action.is_a?(Symbol)
+        raise Maxim::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{do_action}` method already exists") if self.instance_methods.include?(do_action)
+        raise Maxim::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{check_action}` method already exists") if self.instance_methods.include?(check_action)
         raise Maxim::Error.new("`edges[#{index}].in_lock_callback` is not a Symbol") if !edge_details[:in_lock_callback].nil? && !edge_details[:in_lock_callback].is_a?(Symbol)
         raise Maxim::Error.new("`edges[#{index}].post_lock_callback` is not a Symbol") if !edge_details[:post_lock_callback].nil? && !edge_details[:post_lock_callback].is_a?(Symbol)
         raise Maxim::Error.new("`#{edge_details[:on_event]}` (`edges[#{index}].on_event`) is not a valid event") if !edge_details[:on_event].nil? && !events_list.include?(edge_details[:on_event])
@@ -78,7 +85,11 @@ module Maxim
         in_lock_callback   = edge_details[:in_lock_callback]
         post_lock_callback = edge_details[:post_lock_callback]
 
-        define_method(action) do
+        define_method("can_#{action}?".to_sym) do
+          self.send(field) == from
+        end
+
+        define_method("#{action}!".to_sym) do
           raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
 
           self.with_lock do

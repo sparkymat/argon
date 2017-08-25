@@ -369,7 +369,7 @@ RSpec.describe Maxim do
         class SampleClass
           include Maxim
 
-          def foo
+          def foo!
           end
 
           state_machine state: {
@@ -387,7 +387,33 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`foo` is an invalid action name. `SampleClass#foo` method already exists")
+      }.to raise_error(Maxim::Error, "`foo` is an invalid action name. `SampleClass#foo!` method already exists")
+    end
+
+    it 'should not allow edge check action to conflict with an existing method' do
+      expect {
+        class SampleClass
+          include Maxim
+
+          def can_foo?
+          end
+
+          state_machine state: {
+            states: {
+              abc: 1,
+              def: 2,
+            },
+            events: [
+              :ghi,
+            ],
+            edges: [
+              {from: :abc, to: :def, action: :foo},
+            ],
+            on_successful_transition: 4,
+            on_failed_transition:     5,
+          }
+        end
+      }.to raise_error(Maxim::Error, "`foo` is an invalid action name. `SampleClass#can_foo?` method already exists")
     end
 
     it 'should only allow edge in_lock_callback as a Symbol' do
@@ -626,7 +652,7 @@ RSpec.describe Maxim do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :def, action: :move!},
+            {from: :abc, to: :def, action: :move},
           ],
           on_successful_transition: ->(from:, to:) {},
           on_failed_transition:     ->(from:, to:) {},
@@ -644,6 +670,12 @@ RSpec.describe Maxim do
 
     it 'should generate edge methods which transition states' do
       expect { @instance.move! }.to change(@instance, :state).from(:abc).to(:def)
+    end
+
+    it 'should generate edge methods which check if transition possible' do
+      expect(@instance.can_move?).to eq true
+      @instance.update_column(:state, :def)
+      expect(@instance.can_move?).to eq false
     end
 
     it 'should generate edge methods which throw error if state not correct' do
