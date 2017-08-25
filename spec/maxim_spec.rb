@@ -5,35 +5,6 @@ RSpec.describe Maxim do
     expect(Maxim::VERSION).not_to be nil
   end
 
-  it 'behaves as Rails enum' do
-    class SampleClass
-      include Maxim
-
-      def initialize(state)
-        @state = state
-      end
-
-      def self.scope(field, block)
-      end
-
-      def [](ind)
-        return @state if ind == :state
-      end
-
-      state_enum state: {
-        initialized:      0,
-        pending_approval: 1,
-        active:           2,
-        completed:        3,
-      }
-    end
-    object = SampleClass.new(0)
-    expect{ object.state }.to_not raise_error
-    expect(object.state).to eq(:initialized)
-
-    expect(SampleClass).to respond_to(:states)
-  end
-
   context 'checks params structure' do
     after do
       Object.send(:remove_const, :SampleClass)
@@ -681,6 +652,139 @@ RSpec.describe Maxim do
     it 'should generate edge methods which throw error if state not correct' do
       @instance.update_column(:state, 2)
       expect { @instance.move! }.to raise_error(Maxim::InvalidTransitionError)
+    end
+  end
+
+  context 'event generation' do
+    before do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:ghi, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Maxim
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+            ghi: 3,
+          },
+          events: [
+            :foo,
+          ],
+          edges: [
+            {from: :abc, to: :ghi, action: :move,       on_event: :foo},
+            {from: :def, to: :ghi, action: :dont_move,  on_event: :foo},
+          ],
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      @instance = SampleClass.new
+      @instance.update_column(:state, 1)
+      expect(@instance.state).to eq :abc
+    end
+
+    after do
+      Object.send(:remove_const, :SampleClass)
+    end
+
+    it 'should generate event methods which check and transition' do
+      expect { @instance.foo! }.to change(@instance, :state).from(:abc).to(:ghi)
+    end
+
+    it 'should generate event methods which check and transition' do
+      @instance.update_column(:state, 2)
+      expect { @instance.foo! }.to change(@instance, :state).from(:def).to(:ghi)
+    end
+
+    it 'should generate event methods which throw exception if no transition' do
+      @instance.update_column(:state, 3)
+      expect { @instance.foo! }.to raise_error(Maxim::InvalidTransitionError, "No valid transitions")
+    end
+  end
+
+  context 'callbacks' do
+    after do
+      Object.send(:remove_const, :SampleClass)
+    end
+
+    it 'should receive callbacks' do
+      success = double('callback')
+      expect(success).to receive(:call).with(from: :abc, to: :def)
+
+      failure = double('callback')
+      expect(failure).to receive(:call).with(from: :def, to: :def)
+
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Maxim
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+            :foo,
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move},
+          ],
+          on_successful_transition: ->(from:, to:) { success.call(from: from, to: to) },
+          on_failed_transition:     ->(from:, to:) { failure.call(from: from, to: to) },
+        }
+      end
+
+      instance = SampleClass.new
+      instance.update_column(:state, 1)
+      expect(instance.state).to eq :abc
+      expect { instance.move! }.to_not raise_error
+
+      instance = SampleClass.new
+      instance.update_column(:state, 2)
+      expect(instance.state).to eq :def
+      expect { instance.move! }.to raise_error(Maxim::InvalidTransitionError, "Invalid state transition")
     end
   end
 end

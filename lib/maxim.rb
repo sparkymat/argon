@@ -90,7 +90,10 @@ module Maxim
         end
 
         define_method("#{action}!".to_sym) do
-          raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
+          if self.send(field) != from
+            on_failed_transition.call(from: self.send(field), to: to)
+            raise Maxim::InvalidTransitionError.new("Invalid state transition")
+          end
 
           self.with_lock do
             self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
@@ -103,79 +106,23 @@ module Maxim
           unless post_lock_callback.nil?
             self.send(post_lock_callback, from: from, to: to)
           end
+
+          on_successful_transition.call(from: from, to: to)
         end
       end
-    end
 
-    def state_enum(mapping)
-      raise Maxim::Error.new("status_enum called on bad params") unless mapping.is_a?(Hash)
-      raise Maxim::Error.new("status_enum called on bad params") unless mapping.keys.count == 1 && mapping.keys.first.is_a?(Symbol) && mapping.values.first.is_a?(Hash)
-      raise Maxim::Error.new("status_enum called on bad params") unless mapping.values.first.to_a.map{ |a| [ a[0].class, a[1].class ] }.uniq == [ [Symbol, Integer] ]
+      events_list.each do |event_name|
+        define_method("#{event_name}!".to_sym) do
+          actions = edges_list.select{|edge_details| edge_details[:on_event] == event_name}.map{|details| details[:action] }
 
-      field = mapping.keys.first
-      state_map = mapping.values.first
-      reverse_map = state_map.map{|v| [v[1],v[0]]}.to_h
-
-      define_singleton_method("#{ field.to_s.pluralize }") do
-        state_map
-      end
-
-      define_method(field) do
-        reverse_map[self[field]]
-      end
-
-      @transition_edges                ||= {}
-      @transition_edges[field]         ||= {}
-      @transition_edges[field][:edges] = {}
-
-      state_map.keys.each{ |from| @transition_edges[field][:edges][from] = {} }
-
-      define_method("available_#{field}_transitions") do
-        self.class.instance_variable_get(:@transition_edges)[field][:edges][self.send(field)]
-      end
-
-      define_method("can_transition_#{field}?".to_sym) do |to:|
-        self.class.instance_variable_get(:@transition_edges)[field][:edges][self.send(field)][to].present? && self.class.instance_variable_get(:@transition_edges)[field][:edges][self.send(field)][to].length > 0
-      end
-
-      state_map.each_pair do |state_name, state_value|
-        scope state_name, -> { where(field => state_value) }
-
-        define_method("#{ state_name }?".to_sym) do
-          self[field] == state_value
-        end
-      end
-    end
-
-    def add_event(event, to:, edges:)
-      raise Maxim::Error.new("method already defined") if self.instance_methods.include?(action)
-    end
-
-    def add_state_transition(field:, action:, from:, to:, in_lock_callback: nil, post_lock_callback: nil)
-      raise Maxim::Error.new("method already defined") if self.instance_methods.include?(action)
-
-      @transition_edges                      ||= {}
-      @transition_edges[field]               ||= {}
-      @transition_edges[field][:edges]       ||= {}
-      @transition_edges[field][:edges][from] ||= {}
-
-      raise Maxim::Error.new("edge already defined") unless @transition_edges[field][:edges][from][to].nil?
-
-      @transition_edges[field][:edges][from][to] = action
-
-      define_method(action) do
-        raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
-
-        self.with_lock do
-          self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
-
-          unless in_lock_callback.nil?
-            self.send(in_lock_callback, from: from, to: to)
+          actions.each do |action|
+            if self.send("can_#{ action }?")
+              self.send("#{ action }!")
+              return
+            end
           end
-        end
 
-        unless post_lock_callback.nil?
-          self.send(post_lock_callback, from: from, to: to)
+          raise Maxim::InvalidTransitionError.new("No valid transitions")
         end
       end
     end
