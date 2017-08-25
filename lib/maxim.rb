@@ -51,6 +51,49 @@ module Maxim
 
       raise Maxim::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
       raise Maxim::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if on_failed_transition.parameters != [[:keyreq, :from],[:keyreq, :to]]
+
+      # Replicating enum functionality (partially)
+      define_singleton_method("#{ field.to_s.pluralize }") do
+        states_map
+      end
+
+      reverse_states_map = states_map.map{|v| [v[1],v[0]]}.to_h
+
+      define_method(field) do
+        reverse_states_map[self[field]]
+      end
+
+      states_map.each_pair do |state_name, state_value|
+        scope state_name, -> { where(field => state_value) }
+
+        define_method("#{ state_name }?".to_sym) do
+          self[field] == state_value
+        end
+      end
+
+      edges_list.each do |edge_details|
+        from               = edge_details[:from]
+        to                 = edge_details[:to]
+        action             = edge_details[:action]
+        in_lock_callback   = edge_details[:in_lock_callback]
+        post_lock_callback = edge_details[:post_lock_callback]
+
+        define_method(action) do
+          raise Maxim::InvalidTransitionError.new("Invalid state transition") if self.send(field) != from
+
+          self.with_lock do
+            self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
+
+            unless in_lock_callback.nil?
+              self.send(in_lock_callback, from: from, to: to)
+            end
+          end
+
+          unless post_lock_callback.nil?
+            self.send(post_lock_callback, from: from, to: to)
+          end
+        end
+      end
     end
 
     def state_enum(mapping)

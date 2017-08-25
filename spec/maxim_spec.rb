@@ -551,4 +551,104 @@ RSpec.describe Maxim do
       }.to raise_error(Maxim::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
     end
   end
+
+  context 'it emulates the enum functionality with symbols' do
+    after do
+      Object.send(:remove_const, :SampleClass)
+    end
+
+    it 'should generate the state map, getter and scopes' do
+      class SampleClass;end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Maxim
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+            :foo,
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :ghi},
+          ],
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      expect(SampleClass.states).to eq({abc: 1, def: 2})
+
+      a = SampleClass.new
+      allow(a).to receive(:[]).with(:state).and_return(1)
+
+      expect(a.state).to eq :abc
+    end
+  end
+
+  context 'edge generation' do
+    before do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Maxim
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+            :foo,
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move!},
+          ],
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      @instance = SampleClass.new
+      @instance.update_column(:state, 1)
+      expect(@instance.state).to eq :abc
+    end
+
+    after do
+      Object.send(:remove_const, :SampleClass)
+    end
+
+    it 'should generate edge methods which transition states' do
+      expect { @instance.move! }.to change(@instance, :state).from(:abc).to(:def)
+    end
+
+    it 'should generate edge methods which throw error if state not correct' do
+      @instance.update_column(:state, 2)
+      expect { @instance.move! }.to raise_error(Maxim::InvalidTransitionError)
+    end
+  end
 end
