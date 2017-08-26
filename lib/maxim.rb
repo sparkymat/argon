@@ -13,14 +13,14 @@ module Maxim
       raise Maxim::Error.new("status_machine() has to be called on a Hash") unless mapping.is_a?(Hash)
       raise Maxim::Error.new("status_machine() has to specify a field and the mappings") unless mapping.keys.count == 1 && mapping.keys.first.is_a?(Symbol) && mapping.values.first.is_a?(Hash)
       raise Maxim::Error.new("status_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition") if mapping.values.first.keys.sort != %i(states events edges on_successful_transition on_failed_transition).sort
-      
+
       field                    = mapping.keys.first
       states_map               = mapping.values.first[:states]
       events_list              = mapping.values.first[:events]
       edges_list               = mapping.values.first[:edges]
       on_successful_transition = mapping.values.first[:on_successful_transition]
       on_failed_transition     = mapping.values.first[:on_failed_transition]
-      
+
       raise Maxim::Error.new("`states` should be a Hash") unless states_map.is_a?(Hash)
       raise Maxim::Error.new("`states` does not specify any states") if states_map.empty?
       raise Maxim::Error.new("`states` must be a mapping of Symbols to unique Integers") unless states_map.keys.map(&:class).uniq == [Symbol] && states_map.values.map(&:class).uniq == [Integer] && states_map.values.uniq.sort == states_map.values.sort
@@ -29,7 +29,7 @@ module Maxim
         raise Maxim::Error.new("`#{state_name}` is an invalid state name. `#{self.name}##{state_name}?` method already exists") if self.instance_methods.include?("#{state_name}?".to_sym)
       end
 
-      raise Maxim::Error.new("`events` should be an Array of Symbols") if !events_list.is_a?(Array) || events_list.map(&:class).uniq != [Symbol]
+      raise Maxim::Error.new("`events` should be an Array of Symbols") if !events_list.is_a?(Array) || (events_list.length > 0 && events_list.map(&:class).uniq != [Symbol])
       events_list.each do |event_name|
         raise Maxim::Error.new("`#{event_name}` is not a valid event name. `#{self.name}##{event_name}` method already exists") if self.instance_methods.include?(event_name)
       end

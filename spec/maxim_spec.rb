@@ -232,7 +232,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges:                    3,
             on_successful_transition: 4,
