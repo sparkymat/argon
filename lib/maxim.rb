@@ -123,7 +123,7 @@ module Maxim
 
       events_list.each do |event_name|
         define_method("#{event_name}!".to_sym) do
-          actions = edges_list.select{|edge_details| edge_details[:on_events].to_set.include?(event_name)}.map{|details| details[:action] }
+          actions = edges_list.select{|edge_details| !edge_details[:on_events].nil? && edge_details[:on_events].to_set.include?(event_name)}.map{|details| details[:action] }
 
           actions.each do |action|
             if self.send("can_#{ action }?")
