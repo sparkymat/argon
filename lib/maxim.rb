@@ -34,7 +34,7 @@ module Maxim
         raise Maxim::Error.new("`#{event_name}` is not a valid event name. `#{self.name}##{event_name}` method already exists") if self.instance_methods.include?(event_name)
       end
 
-      raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_event (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
+      raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
       edges_list.each_with_index do |edge_details, index|
         from         = edge_details[:from]
         to           = edge_details[:to]
@@ -42,7 +42,7 @@ module Maxim
         do_action    = "#{action}!".to_sym
         check_action = "can_#{action}?".to_sym
 
-        raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_event (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :post_lock_callback, :in_lock_callback, :on_event].to_set) && [:from, :to, :action].to_set.subset?(edge_details.keys.to_set)
+        raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :post_lock_callback, :in_lock_callback, :on_events].to_set) && [:from, :to, :action].to_set.subset?(edge_details.keys.to_set)
         raise Maxim::Error.new("`edges[#{index}].from` is not a valid state") unless states_map.keys.include?(from)
         raise Maxim::Error.new("`edges[#{index}].to` is not a valid state") unless states_map.keys.include?(to)
         raise Maxim::Error.new("`edges[#{index}].action` is not a Symbol") unless action.is_a?(Symbol)
@@ -50,7 +50,12 @@ module Maxim
         raise Maxim::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{check_action}` method already exists") if self.instance_methods.include?(check_action)
         raise Maxim::Error.new("`edges[#{index}].in_lock_callback` is not a Symbol") if !edge_details[:in_lock_callback].nil? && !edge_details[:in_lock_callback].is_a?(Symbol)
         raise Maxim::Error.new("`edges[#{index}].post_lock_callback` is not a Symbol") if !edge_details[:post_lock_callback].nil? && !edge_details[:post_lock_callback].is_a?(Symbol)
-        raise Maxim::Error.new("`#{edge_details[:on_event]}` (`edges[#{index}].on_event`) is not a valid event") if !edge_details[:on_event].nil? && !events_list.include?(edge_details[:on_event])
+        raise Maxim::Error.new("`#{edge_details[:on_events]}` (`edges[#{index}].on_events`) is not a valid list of events") if !edge_details[:on_events].nil? && !edge_details[:on_events].is_a?(Array)
+        unless edge_details[:on_events].nil?
+          edge_details[:on_events].each_with_index do |event_name, event_index|
+            raise Maxim::Error.new("`#{ event_name }` (`edges[#{index}].on_events[#{event_index}]`) is not a registered event") unless events_list.include?(event_name)
+          end
+        end
       end
 
       raise Maxim::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)
@@ -118,7 +123,7 @@ module Maxim
 
       events_list.each do |event_name|
         define_method("#{event_name}!".to_sym) do
-          actions = edges_list.select{|edge_details| edge_details[:on_event] == event_name}.map{|details| details[:action] }
+          actions = edges_list.select{|edge_details| edge_details[:on_events].to_set.include?(event_name)}.map{|details| details[:action] }
 
           actions.each do |action|
             if self.send("can_#{ action }?")

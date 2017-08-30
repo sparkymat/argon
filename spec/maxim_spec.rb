@@ -238,7 +238,7 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_event (optional)")
+      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)")
     end
 
     it 'should only allow edges with the right keys' do
@@ -262,7 +262,7 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_event (optional)")
+      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)")
     end
 
     it 'should only allow edges from valid states' do
@@ -432,7 +432,7 @@ RSpec.describe Maxim do
       }.to raise_error(Maxim::Error, "`edges[0].post_lock_callback` is not a Symbol")
     end
 
-    it 'should only allow edge on_event from the event list' do
+    it 'should only allow edge on_events as array of Symbols' do
       expect {
         class SampleClass
           include Maxim
@@ -446,13 +446,37 @@ RSpec.describe Maxim do
               :foo,
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, on_event: :bar},
+              {from: :abc, to: :def, action: :ghi, on_events: :bar},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`bar` (`edges[0].on_event`) is not a valid event")
+      }.to raise_error(Maxim::Error, "`bar` (`edges[0].on_events`) is not a valid list of events")
+    end
+
+
+    it 'should only allow edge on_events from the event list' do
+      expect {
+        class SampleClass
+          include Maxim
+
+          state_machine state: {
+            states: {
+              abc: 1,
+              def: 2,
+            },
+            events: [
+              :foo,
+            ],
+            edges: [
+              {from: :abc, to: :def, action: :ghi, on_events: [:bar]},
+            ],
+            on_successful_transition: 4,
+            on_failed_transition:     5,
+          }
+        end
+      }.to raise_error(Maxim::Error, "`bar` (`edges[0].on_events[0]`) is not a registered event")
     end
 
     it 'should only allow on_successful_transition as a lambda' do
@@ -691,8 +715,8 @@ RSpec.describe Maxim do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :ghi, action: :move,       on_event: :foo},
-            {from: :def, to: :ghi, action: :dont_move,  on_event: :foo},
+            {from: :abc, to: :ghi, action: :move,       on_events: [:foo]},
+            {from: :def, to: :ghi, action: :dont_move,  on_events: [:foo]},
           ],
           on_successful_transition: ->(from:, to:) {},
           on_failed_transition:     ->(from:, to:) {},
