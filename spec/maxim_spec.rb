@@ -238,7 +238,7 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)")
+      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)")
     end
 
     it 'should only allow edges with the right keys' do
@@ -261,7 +261,7 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)")
+      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)")
     end
 
     it 'should only allow edges from valid states' do
@@ -277,7 +277,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: 1, to: 2, action: 3},
+              {from: 1, to: 2, action: 3, callbacks: 4},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -299,7 +299,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: 2, action: 3},
+              {from: :abc, to: 2, action: 3, callbacks: 4},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -321,7 +321,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: 3},
+              {from: :abc, to: :def, action: 3, callbacks: 4},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -346,7 +346,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :foo},
+              {from: :abc, to: :def, action: :foo, callbacks: 4},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -371,7 +371,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :foo},
+              {from: :abc, to: :def, action: :foo, callbacks: 4},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -380,7 +380,7 @@ RSpec.describe Maxim do
       }.to raise_error(Maxim::Error, "`foo` is an invalid action name. `SampleClass#can_foo?` method already exists")
     end
 
-    it 'should only allow edge in_lock_callback as true' do
+    it 'should only allow edge callbacks as {in: true/false, post: true/false}' do
       expect {
         class SampleClass
           include Maxim
@@ -393,35 +393,13 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, in_lock_callback: 22},
+              {from: :abc, to: :def, action: :ghi, callbacks: 22},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges[0].in_lock_callback` is not `true`")
-    end
-
-    it 'should only allow edge post_lock_callback as true' do
-      expect {
-        class SampleClass
-          include Maxim
-
-          state_machine state: {
-            states: {
-              abc: 1,
-              def: 2,
-            },
-            events: [
-            ],
-            edges: [
-              {from: :abc, to: :def, action: :ghi, post_lock_callback: 22},
-            ],
-            on_successful_transition: 4,
-            on_failed_transition:     5,
-          }
-        end
-      }.to raise_error(Maxim::Error, "`edges[0].post_lock_callback` is not `true`")
+      }.to raise_error(Maxim::Error, "`edges[0].callbacks` must be {in: true/false, post: true/false}")
     end
 
     it 'should only allow edge on_events as array of Symbols' do
@@ -437,7 +415,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, on_events: :bar},
+              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}, on_events: :bar},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -467,7 +445,7 @@ RSpec.describe Maxim do
               :foo,
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, on_events: [:bar]},
+              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}, on_events: [:bar]},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -489,7 +467,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi},
+              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -511,7 +489,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi},
+              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
             ],
             on_successful_transition: ->(test:) {},
             on_failed_transition:     5,
@@ -533,7 +511,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi},
+              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
             ],
             on_successful_transition: ->(from:, to:, context:) {},
             on_failed_transition:     5,
@@ -555,7 +533,7 @@ RSpec.describe Maxim do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi},
+              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
             ],
             on_successful_transition: ->(from:, to:, context:) {},
             on_failed_transition:     ->(test:) {},
@@ -587,7 +565,7 @@ RSpec.describe Maxim do
           events: [
           ],
           edges: [
-            {from: :abc, to: :def, action: :ghi},
+            {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
           ],
           on_successful_transition: ->(from:, to:, context:) {},
           on_failed_transition:     ->(from:, to:) {},
@@ -637,7 +615,7 @@ RSpec.describe Maxim do
           events: [
           ],
           edges: [
-            {from: :abc, to: :def, action: :move},
+            {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
           ],
           on_successful_transition: ->(from:, to:, context:) {},
           on_failed_transition:     ->(from:, to:, context:) {},
@@ -719,8 +697,8 @@ RSpec.describe Maxim do
             :bar,
           ],
           edges: [
-            {from: :abc, to: :ghi, action: :move,       on_events: [:foo, :bar]},
-            {from: :def, to: :ghi, action: :dont_move,  on_events: [:foo]},
+            {from: :abc, to: :ghi, action: :move,      callbacks: {in: false, post: false},  on_events: [:foo, :bar]},
+            {from: :def, to: :ghi, action: :dont_move, callbacks: {in: false, post: false},  on_events: [:foo]},
           ],
           on_successful_transition: ->(from:, to:, context:) {},
           on_failed_transition:     ->(from:, to:, context:) {},
@@ -816,7 +794,7 @@ RSpec.describe Maxim do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :def, action: :move},
+            {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
           ],
           on_successful_transition: ->(from:, to:, context:) { success.call(from: from, to: to) },
           on_failed_transition:     ->(from:, to:, context:) { failure.call(from: from, to: to) },
@@ -886,7 +864,7 @@ RSpec.describe Maxim do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :def, action: :move},
+            {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
           ],
           on_successful_transition: ->(from:, to:, context:) { success.call(from: from, to: to, context: context) },
           on_failed_transition:     ->(from:, to:, context:) { failure.call(from: from, to: to, context: context) },
@@ -950,7 +928,7 @@ RSpec.describe Maxim do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :def, action: :move, on_events: [:foo], post_lock_callback: true, in_lock_callback: true},
+            {from: :abc, to: :def, action: :move, on_events: [:foo], callbacks: {in: true, post: true}},
           ],
           on_successful_transition: ->(from:, to:, context:) {},
           on_failed_transition:     ->(from:, to:, context:) {},

@@ -36,7 +36,7 @@ module Maxim
         raise Maxim::Error.new("`after_#{event_name}(from:, to:, context:)` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
       end
 
-      raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
+      raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
       edges_list.each_with_index do |edge_details, index|
         from         = edge_details[:from]
         to           = edge_details[:to]
@@ -44,14 +44,13 @@ module Maxim
         do_action    = "#{action}!".to_sym
         check_action = "can_#{action}?".to_sym
 
-        raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :post_lock_callback, :in_lock_callback, :on_events].to_set) && [:from, :to, :action].to_set.subset?(edge_details.keys.to_set)
+        raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :callbacks, :on_events].to_set) && [:from, :to, :action, :callbacks].to_set.subset?(edge_details.keys.to_set)
         raise Maxim::Error.new("`edges[#{index}].from` is not a valid state") unless states_map.keys.include?(from)
         raise Maxim::Error.new("`edges[#{index}].to` is not a valid state") unless states_map.keys.include?(to)
         raise Maxim::Error.new("`edges[#{index}].action` is not a Symbol") unless action.is_a?(Symbol)
         raise Maxim::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{do_action}` method already exists") if self.instance_methods.include?(do_action)
         raise Maxim::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{check_action}` method already exists") if self.instance_methods.include?(check_action)
-        raise Maxim::Error.new("`edges[#{index}].in_lock_callback` is not `true`") if !edge_details[:in_lock_callback].nil? && edge_details[:in_lock_callback] != true
-        raise Maxim::Error.new("`edges[#{index}].post_lock_callback` is not `true`") if !edge_details[:post_lock_callback].nil? && edge_details[:post_lock_callback] != true
+        raise Maxim::Error.new("`edges[#{index}].callbacks` must be {in: true/false, post: true/false}") if !edge_details[:callbacks].is_a?(Hash) || edge_details[:callbacks].keys.to_set != [:post, :in].to_set || !edge_details[:callbacks].values.to_set.subset?([true, false].to_set)
         raise Maxim::Error.new("`#{edge_details[:on_events]}` (`edges[#{index}].on_events`) is not a valid list of events") if !edge_details[:on_events].nil? && !edge_details[:on_events].is_a?(Array)
         unless edge_details[:on_events].nil?
           edge_details[:on_events].each_with_index do |event_name, event_index|
@@ -89,8 +88,8 @@ module Maxim
         from               = edge_details[:from]
         to                 = edge_details[:to]
         action             = edge_details[:action]
-        in_lock_callback   = "on_#{action}".to_sym if edge_details[:in_lock_callback] == true
-        post_lock_callback = "after_#{action}".to_sym if edge_details[:post_lock_callback] == true
+        in_lock_callback   = "on_#{action}".to_sym if edge_details[:callbacks][:in] == true
+        post_lock_callback = "after_#{action}".to_sym if edge_details[:callbacks][:post] == true
 
         define_method("can_#{action}?".to_sym) do
           self.send(field) == from
