@@ -58,11 +58,11 @@ module Maxim
         end
       end
 
-      raise Maxim::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)
-      raise Maxim::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:)`") if on_successful_transition.parameters != [[:keyreq, :from],[:keyreq, :to]]
+      raise Maxim::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)
+      raise Maxim::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`") if on_successful_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set && on_successful_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
 
-      raise Maxim::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
-      raise Maxim::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if on_failed_transition.parameters != [[:keyreq, :from],[:keyreq, :to]]
+      raise Maxim::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
+      raise Maxim::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`") if on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set && on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
 
       # Replicating enum functionality (partially)
       define_singleton_method("#{ field.to_s.pluralize }") do
@@ -94,9 +94,9 @@ module Maxim
           self.send(field) == from
         end
 
-        define_method("#{action}!".to_sym) do
+        define_method("#{action}!".to_sym) do |context = nil|
           if self.send(field) != from
-            on_failed_transition.call(from: self.send(field), to: to)
+            on_failed_transition.call(from: self.send(field), to: to, context: context)
             raise Maxim::InvalidTransitionError.new("Invalid state transition")
           end
 
@@ -105,29 +105,29 @@ module Maxim
               self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
 
               unless in_lock_callback.nil?
-                self.send(in_lock_callback, from: from, to: to)
+                self.send(in_lock_callback, from: from, to: to, context: context)
               end
             end
           rescue => e
-            on_failed_transition.call(from: self.send(field), to: to)
+            on_failed_transition.call(from: self.send(field), to: to, context: context)
             raise e
           end
 
-          on_successful_transition.call(from: from, to: to)
+          on_successful_transition.call(from: from, to: to, context: context)
 
           unless post_lock_callback.nil?
-            self.send(post_lock_callback, from: from, to: to)
+            self.send(post_lock_callback, from: from, to: to, context: context)
           end
         end
       end
 
       events_list.each do |event_name|
-        define_method("#{event_name}!".to_sym) do
+        define_method("#{event_name}!".to_sym) do |context = nil|
           actions = edges_list.select{|edge_details| !edge_details[:on_events].nil? && edge_details[:on_events].to_set.include?(event_name)}.map{|details| details[:action] }
 
           actions.each do |action|
             if self.send("can_#{ action }?")
-              self.send("#{ action }!")
+              self.send("#{ action }!", context)
               return
             end
           end

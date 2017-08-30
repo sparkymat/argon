@@ -499,10 +499,10 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:)`")
+      }.to raise_error(Maxim::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`")
     end
 
-    it 'should only allow on_successful_transition as a lambda(from:, to:)' do
+    it 'should only allow on_successful_transition as a lambda(from:, to:, context:)' do
       expect {
         class SampleClass
           include Maxim
@@ -522,7 +522,7 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:)`")
+      }.to raise_error(Maxim::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`")
     end
 
     it 'should only allow on_failed_transition as a lambda' do
@@ -541,14 +541,14 @@ RSpec.describe Maxim do
             edges: [
               {from: :abc, to: :def, action: :ghi},
             ],
-            on_successful_transition: ->(from:,to:) {},
+            on_successful_transition: ->(from:, to:, context:) {},
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
+      }.to raise_error(Maxim::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`")
     end
 
-    it 'should only allow on_failed_transition as a lambda(from:, to:)' do
+    it 'should only allow on_failed_transition as a lambda(from:, to:, context:)' do
       expect {
         class SampleClass
           include Maxim
@@ -564,11 +564,11 @@ RSpec.describe Maxim do
             edges: [
               {from: :abc, to: :def, action: :ghi},
             ],
-            on_successful_transition: ->(from:, to:) {},
+            on_successful_transition: ->(from:, to:, context:) {},
             on_failed_transition:     ->(test:) {},
           }
         end
-      }.to raise_error(Maxim::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
+      }.to raise_error(Maxim::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`")
     end
   end
 
@@ -597,7 +597,7 @@ RSpec.describe Maxim do
           edges: [
             {from: :abc, to: :def, action: :ghi},
           ],
-          on_successful_transition: ->(from:, to:) {},
+          on_successful_transition: ->(from:, to:, context:) {},
           on_failed_transition:     ->(from:, to:) {},
         }
       end
@@ -648,8 +648,8 @@ RSpec.describe Maxim do
           edges: [
             {from: :abc, to: :def, action: :move},
           ],
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(from:, to:, context:) {},
+          on_failed_transition:     ->(from:, to:, context:) {},
         }
       end
 
@@ -719,8 +719,8 @@ RSpec.describe Maxim do
             {from: :abc, to: :ghi, action: :move,       on_events: [:foo, :bar]},
             {from: :def, to: :ghi, action: :dont_move,  on_events: [:foo]},
           ],
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(from:, to:, context:) {},
+          on_failed_transition:     ->(from:, to:, context:) {},
         }
       end
 
@@ -809,8 +809,8 @@ RSpec.describe Maxim do
           edges: [
             {from: :abc, to: :def, action: :move},
           ],
-          on_successful_transition: ->(from:, to:) { success.call(from: from, to: to) },
-          on_failed_transition:     ->(from:, to:) { failure.call(from: from, to: to) },
+          on_successful_transition: ->(from:, to:, context:) { success.call(from: from, to: to) },
+          on_failed_transition:     ->(from:, to:, context:) { failure.call(from: from, to: to) },
         }
       end
 
@@ -823,6 +823,129 @@ RSpec.describe Maxim do
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
       expect { instance.move! }.to raise_error(Maxim::InvalidTransitionError, "Invalid state transition")
+    end
+  end
+
+  context 'callbacks with context' do
+    after do
+      Object.send(:remove_const, :SampleClass)
+    end
+
+    it 'should receive callbacks' do
+      success = double('callback')
+      expect(success).to receive(:call).with(from: :abc, to: :def, context: :foobar)
+
+      failure = double('callback')
+      expect(failure).to receive(:call).with(from: :def, to: :def, context: :foobar)
+
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Maxim
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+            :foo,
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move},
+          ],
+          on_successful_transition: ->(from:, to:, context:) { success.call(from: from, to: to, context: context) },
+          on_failed_transition:     ->(from:, to:, context:) { failure.call(from: from, to: to, context: context) },
+        }
+      end
+
+      instance = SampleClass.new
+      instance.update_column(:state, 1)
+      expect(instance.state).to eq :abc
+      expect { instance.move!(:foobar) }.to_not raise_error
+
+      instance = SampleClass.new
+      instance.update_column(:state, 2)
+      expect(instance.state).to eq :def
+      expect { instance.move!(:foobar) }.to raise_error(Maxim::InvalidTransitionError, "Invalid state transition")
+    end
+  end
+
+  context 'in/post lock callbacks' do
+    after do
+      Object.send(:remove_const, :SampleClass)
+    end
+
+    it 'should receive callbacks' do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Maxim
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+            :foo,
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move, on_events: [:foo], post_lock_callback: :after_move, in_lock_callback: :on_move},
+          ],
+          on_successful_transition: ->(from:, to:, context:) {},
+          on_failed_transition:     ->(from:, to:, context:) {},
+        }
+      end
+
+      instance = SampleClass.new
+
+      expect(instance).to receive(:on_move).with(hash_including(from: :abc, to: :def, context: :foobar)).twice
+      expect(instance).to receive(:after_move).with(hash_including(from: :abc, to: :def, context: :foobar)).twice
+
+      instance.update_column(:state, 1)
+      instance.foo!(:foobar)
+
+      instance.update_column(:state, 1)
+      instance.move!(:foobar)
     end
   end
 end
