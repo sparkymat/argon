@@ -713,9 +713,10 @@ RSpec.describe Maxim do
           },
           events: [
             :foo,
+            :bar,
           ],
           edges: [
-            {from: :abc, to: :ghi, action: :move,       on_events: [:foo]},
+            {from: :abc, to: :ghi, action: :move,       on_events: [:foo, :bar]},
             {from: :def, to: :ghi, action: :dont_move,  on_events: [:foo]},
           ],
           on_successful_transition: ->(from:, to:) {},
@@ -737,13 +738,27 @@ RSpec.describe Maxim do
     end
 
     it 'should generate event methods which check and transition' do
+      expect { @instance.bar! }.to change(@instance, :state).from(:abc).to(:ghi)
+    end
+
+    it 'should generate event methods which check and transition' do
       @instance.update_column(:state, 2)
       expect { @instance.foo! }.to change(@instance, :state).from(:def).to(:ghi)
     end
 
-    it 'should generate event methods which throw exception if no transition' do
+    it 'should throw exception if generated event method can\'t find a valid edge' do
+      @instance.update_column(:state, 2)
+      expect { @instance.bar! }.to raise_error(Maxim::InvalidTransitionError, "No valid transitions")
+    end
+
+    it 'should throw exception if generated event method has no edges' do
       @instance.update_column(:state, 3)
       expect { @instance.foo! }.to raise_error(Maxim::InvalidTransitionError, "No valid transitions")
+    end
+
+    it 'should throw exception if generated event method has no edges' do
+      @instance.update_column(:state, 3)
+      expect { @instance.bar! }.to raise_error(Maxim::InvalidTransitionError, "No valid transitions")
     end
   end
 
