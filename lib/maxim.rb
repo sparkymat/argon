@@ -95,19 +95,24 @@ module Maxim
             raise Maxim::InvalidTransitionError.new("Invalid state transition")
           end
 
-          self.with_lock do
-            self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
+          begin
+            self.with_lock do
+              self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
 
-            unless in_lock_callback.nil?
-              self.send(in_lock_callback, from: from, to: to)
+              unless in_lock_callback.nil?
+                self.send(in_lock_callback, from: from, to: to)
+              end
             end
+          rescue => e
+            on_failed_transition.call(from: self.send(field), to: to)
+            raise e
           end
+
+          on_successful_transition.call(from: from, to: to)
 
           unless post_lock_callback.nil?
             self.send(post_lock_callback, from: from, to: to)
           end
-
-          on_successful_transition.call(from: from, to: to)
         end
       end
 
