@@ -252,7 +252,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: 1, to: 2},
@@ -276,7 +275,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: 1, to: 2, action: 3},
@@ -299,7 +297,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: 2, action: 3},
@@ -322,7 +319,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: :def, action: 3},
@@ -348,7 +344,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :ghi,
             ],
             edges: [
               {from: :abc, to: :def, action: :foo},
@@ -374,7 +369,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :ghi,
             ],
             edges: [
               {from: :abc, to: :def, action: :foo},
@@ -386,7 +380,7 @@ RSpec.describe Maxim do
       }.to raise_error(Maxim::Error, "`foo` is an invalid action name. `SampleClass#can_foo?` method already exists")
     end
 
-    it 'should only allow edge in_lock_callback as a Symbol' do
+    it 'should only allow edge in_lock_callback as true' do
       expect {
         class SampleClass
           include Maxim
@@ -397,7 +391,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: :def, action: :ghi, in_lock_callback: 22},
@@ -406,10 +399,10 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges[0].in_lock_callback` is not a Symbol")
+      }.to raise_error(Maxim::Error, "`edges[0].in_lock_callback` is not `true`")
     end
 
-    it 'should only allow edge post_lock_callback as a Symbol' do
+    it 'should only allow edge post_lock_callback as true' do
       expect {
         class SampleClass
           include Maxim
@@ -420,7 +413,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: :def, action: :ghi, post_lock_callback: 22},
@@ -429,7 +421,7 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges[0].post_lock_callback` is not a Symbol")
+      }.to raise_error(Maxim::Error, "`edges[0].post_lock_callback` is not `true`")
     end
 
     it 'should only allow edge on_events as array of Symbols' do
@@ -443,7 +435,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: :def, action: :ghi, on_events: :bar},
@@ -460,6 +451,12 @@ RSpec.describe Maxim do
       expect {
         class SampleClass
           include Maxim
+
+          def on_foo(from:, to:, context:)
+          end
+
+          def after_foo(from:, to:, context:)
+          end
 
           state_machine state: {
             states: {
@@ -490,7 +487,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: :def, action: :ghi},
@@ -513,7 +509,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: :def, action: :ghi},
@@ -536,7 +531,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: :def, action: :ghi},
@@ -559,7 +553,6 @@ RSpec.describe Maxim do
               def: 2,
             },
             events: [
-              :foo,
             ],
             edges: [
               {from: :abc, to: :def, action: :ghi},
@@ -592,7 +585,6 @@ RSpec.describe Maxim do
             def: 2,
           },
           events: [
-            :foo,
           ],
           edges: [
             {from: :abc, to: :def, action: :ghi},
@@ -643,7 +635,6 @@ RSpec.describe Maxim do
             def: 2,
           },
           events: [
-            :foo,
           ],
           edges: [
             {from: :abc, to: :def, action: :move},
@@ -704,6 +695,18 @@ RSpec.describe Maxim do
 
       SampleClass.class_eval do
         include Maxim
+
+        def on_foo(from:, to:, context:)
+        end
+
+        def after_foo(from:, to:, context:)
+        end
+
+        def on_bar(from:, to:, context:)
+        end
+
+        def after_bar(from:, to:, context:)
+        end
 
         state_machine state: {
           states: {
@@ -798,6 +801,12 @@ RSpec.describe Maxim do
       SampleClass.class_eval do
         include Maxim
 
+        def on_foo(from:, to:, context:)
+        end
+
+        def after_foo(from:, to:, context:)
+        end
+
         state_machine state: {
           states: {
             abc: 1,
@@ -862,6 +871,12 @@ RSpec.describe Maxim do
       SampleClass.class_eval do
         include Maxim
 
+        def on_foo(from:, to:, context:)
+        end
+
+        def after_foo(from:, to:, context:)
+        end
+
         state_machine state: {
           states: {
             abc: 1,
@@ -920,6 +935,12 @@ RSpec.describe Maxim do
       SampleClass.class_eval do
         include Maxim
 
+        def on_foo(from:, to:, context:)
+        end
+
+        def after_foo(from:, to:, context:)
+        end
+
         state_machine state: {
           states: {
             abc: 1,
@@ -929,7 +950,7 @@ RSpec.describe Maxim do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :def, action: :move, on_events: [:foo], post_lock_callback: :after_move, in_lock_callback: :on_move},
+            {from: :abc, to: :def, action: :move, on_events: [:foo], post_lock_callback: true, in_lock_callback: true},
           ],
           on_successful_transition: ->(from:, to:, context:) {},
           on_failed_transition:     ->(from:, to:, context:) {},
@@ -940,6 +961,9 @@ RSpec.describe Maxim do
 
       expect(instance).to receive(:on_move).with(hash_including(from: :abc, to: :def, context: :foobar)).twice
       expect(instance).to receive(:after_move).with(hash_including(from: :abc, to: :def, context: :foobar)).twice
+
+      expect(instance).to receive(:on_foo).with(hash_including(from: :abc, to: :def, context: :foobar)).once
+      expect(instance).to receive(:after_foo).with(hash_including(from: :abc, to: :def, context: :foobar)).once
 
       instance.update_column(:state, 1)
       instance.foo!(:foobar)

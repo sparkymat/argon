@@ -32,6 +32,8 @@ module Maxim
       raise Maxim::Error.new("`events` should be an Array of Symbols") if !events_list.is_a?(Array) || (events_list.length > 0 && events_list.map(&:class).uniq != [Symbol])
       events_list.each do |event_name|
         raise Maxim::Error.new("`#{event_name}` is not a valid event name. `#{self.name}##{event_name}` method already exists") if self.instance_methods.include?(event_name)
+        raise Maxim::Error.new("`on_#{event_name}(from:, to:, context:)` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
+        raise Maxim::Error.new("`after_#{event_name}(from:, to:, context:)` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
       end
 
       raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, post_lock_callback (optional), in_lock_callback (optional), on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
@@ -48,8 +50,8 @@ module Maxim
         raise Maxim::Error.new("`edges[#{index}].action` is not a Symbol") unless action.is_a?(Symbol)
         raise Maxim::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{do_action}` method already exists") if self.instance_methods.include?(do_action)
         raise Maxim::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{check_action}` method already exists") if self.instance_methods.include?(check_action)
-        raise Maxim::Error.new("`edges[#{index}].in_lock_callback` is not a Symbol") if !edge_details[:in_lock_callback].nil? && !edge_details[:in_lock_callback].is_a?(Symbol)
-        raise Maxim::Error.new("`edges[#{index}].post_lock_callback` is not a Symbol") if !edge_details[:post_lock_callback].nil? && !edge_details[:post_lock_callback].is_a?(Symbol)
+        raise Maxim::Error.new("`edges[#{index}].in_lock_callback` is not `true`") if !edge_details[:in_lock_callback].nil? && edge_details[:in_lock_callback] != true
+        raise Maxim::Error.new("`edges[#{index}].post_lock_callback` is not `true`") if !edge_details[:post_lock_callback].nil? && edge_details[:post_lock_callback] != true
         raise Maxim::Error.new("`#{edge_details[:on_events]}` (`edges[#{index}].on_events`) is not a valid list of events") if !edge_details[:on_events].nil? && !edge_details[:on_events].is_a?(Array)
         unless edge_details[:on_events].nil?
           edge_details[:on_events].each_with_index do |event_name, event_index|
@@ -87,14 +89,14 @@ module Maxim
         from               = edge_details[:from]
         to                 = edge_details[:to]
         action             = edge_details[:action]
-        in_lock_callback   = edge_details[:in_lock_callback]
-        post_lock_callback = edge_details[:post_lock_callback]
+        in_lock_callback   = "on_#{action}".to_sym if edge_details[:in_lock_callback] == true
+        post_lock_callback = "after_#{action}".to_sym if edge_details[:post_lock_callback] == true
 
         define_method("can_#{action}?".to_sym) do
           self.send(field) == from
         end
 
-        define_method("#{action}!".to_sym) do |context = nil|
+        define_method("#{action}!".to_sym) do |context = nil, &block|
           if self.send(field) != from
             on_failed_transition.call(from: self.send(field), to: to, context: context)
             raise Maxim::InvalidTransitionError.new("Invalid state transition")
@@ -106,6 +108,10 @@ module Maxim
 
               unless in_lock_callback.nil?
                 self.send(in_lock_callback, from: from, to: to, context: context)
+              end
+
+              unless block.nil?
+                block.call
               end
             end
           rescue => e
@@ -123,11 +129,18 @@ module Maxim
 
       events_list.each do |event_name|
         define_method("#{event_name}!".to_sym) do |context = nil|
-          actions = edges_list.select{|edge_details| !edge_details[:on_events].nil? && edge_details[:on_events].to_set.include?(event_name)}.map{|details| details[:action] }
+          matching_edges = edges_list.select{ |edge| !edge[:on_events].nil? && edge[:on_events].to_set.include?(event_name) }
 
-          actions.each do |action|
+          matching_edges.each do |edge|
+            action = edge[:action]
+            from = edge[:from]
+            to = edge[:to]
+
             if self.send("can_#{ action }?")
-              self.send("#{ action }!", context)
+              self.send("#{ action }!", context) do
+                self.send("on_#{ event_name }", from: from, to: to, context: context)
+              end
+              self.send("after_#{ event_name }", from: from, to: to, context: context)
               return
             end
           end
