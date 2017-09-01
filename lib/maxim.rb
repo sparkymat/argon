@@ -37,6 +37,8 @@ module Maxim
       end
 
       raise Maxim::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
+
+      registered_edge_pairs = [].to_set
       edges_list.each_with_index do |edge_details, index|
         from         = edge_details[:from]
         to           = edge_details[:to]
@@ -57,6 +59,8 @@ module Maxim
             raise Maxim::Error.new("`#{ event_name }` (`edges[#{index}].on_events[#{event_index}]`) is not a registered event") unless events_list.include?(event_name)
           end
         end
+        raise Maxim::Error.new("`edges[#{index}]` is a duplicate edge") if registered_edge_pairs.include?([from,to])
+        registered_edge_pairs << [from, to]
       end
 
       raise Maxim::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)

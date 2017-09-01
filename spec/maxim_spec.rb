@@ -743,6 +743,60 @@ RSpec.describe Maxim do
     end
   end
 
+  context 'state machine checks' do
+    after do
+      Object.send(:remove_const, :SampleClass)
+    end
+
+    it 'should raise error on duplicate edges' do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect {
+        SampleClass.class_eval do
+          include Maxim
+
+          def on_foo(from:, to:, context:)
+          end
+
+          def after_foo(from:, to:, context:)
+          end
+
+          state_machine state: {
+            states: {
+              abc: 1,
+              def: 2,
+            },
+            events: [
+              :foo,
+            ],
+            edges: [
+              {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
+              {from: :abc, to: :def, action: :walk, callbacks: {in: false, post: false}},
+            ],
+            on_successful_transition: ->(from:, to:, context:) { },
+            on_failed_transition:     ->(from:, to:, context:) { },
+          }
+        end
+      }.to raise_error(Maxim::Error, "`edges[1]` is a duplicate edge")
+    end
+  end
+
   context 'callbacks' do
     after do
       Object.send(:remove_const, :SampleClass)
