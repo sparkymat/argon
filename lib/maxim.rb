@@ -69,6 +69,23 @@ module Maxim
       raise Maxim::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
       raise Maxim::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`") if on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set && on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
 
+      state_machines = {}
+      begin
+        state_machines = self.class_variable_get(:@@state_machines)
+      rescue NameError
+      end
+      state_machines ||= {}
+      state_machines = state_machines.merge(mapping)
+      self.class_variable_set(:@@state_machines, state_machines)
+
+      class << self
+        attr_accessor :state_machines
+      end
+
+      define_singleton_method(:state_machines) do
+        self.class_variable_get(:@@state_machines || {})
+      end
+
       # Replicating enum functionality (partially)
       define_singleton_method("#{ field.to_s.pluralize }") do
         states_map
