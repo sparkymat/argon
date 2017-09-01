@@ -25,7 +25,7 @@ RSpec.describe Maxim do
           include Maxim
           state_machine :state
         end
-      }.to raise_error(Maxim::Error, "status_machine() has to be called on a Hash")
+      }.to raise_error(Maxim::Error, "state_machine() has to be called on a Hash")
     end
 
     it 'should only allow a field and mappings' do
@@ -34,7 +34,7 @@ RSpec.describe Maxim do
           include Maxim
           state_machine state: :foo
         end
-      }.to raise_error(Maxim::Error, "status_machine() has to specify a field and the mappings")
+      }.to raise_error(Maxim::Error, "state_machine() has to specify a field and the mappings")
     end
 
     it 'should only allow states, events, edges and transition callbacks' do
@@ -46,7 +46,7 @@ RSpec.describe Maxim do
             bar: 2,
           }
         end
-      }.to raise_error(Maxim::Error, "status_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
+      }.to raise_error(Maxim::Error, "state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
     end
 
     it 'should only allow Hash for states' do
@@ -61,7 +61,7 @@ RSpec.describe Maxim do
             bar: 2,
           }
         end
-      }.to raise_error(Maxim::Error, "status_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
+      }.to raise_error(Maxim::Error, "state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
     end
 
     it 'should not allow empty states definitions' do

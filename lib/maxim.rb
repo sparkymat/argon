@@ -10,9 +10,9 @@ module Maxim
 
   module ClassMethods
     def state_machine(mapping)
-      raise Maxim::Error.new("status_machine() has to be called on a Hash") unless mapping.is_a?(Hash)
-      raise Maxim::Error.new("status_machine() has to specify a field and the mappings") unless mapping.keys.count == 1 && mapping.keys.first.is_a?(Symbol) && mapping.values.first.is_a?(Hash)
-      raise Maxim::Error.new("status_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition") if mapping.values.first.keys.sort != %i(states events edges on_successful_transition on_failed_transition).sort
+      raise Maxim::Error.new("state_machine() has to be called on a Hash") unless mapping.is_a?(Hash)
+      raise Maxim::Error.new("state_machine() has to specify a field and the mappings") unless mapping.keys.count == 1 && mapping.keys.first.is_a?(Symbol) && mapping.values.first.is_a?(Hash)
+      raise Maxim::Error.new("state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition") if mapping.values.first.keys.sort != %i(states events edges on_successful_transition on_failed_transition).sort
 
       field                    = mapping.keys.first
       states_map               = mapping.values.first[:states]
