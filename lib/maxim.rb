@@ -125,6 +125,7 @@ module Maxim
           begin
             self.with_lock do
               self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
+              self.touch
 
               unless in_lock_callback.nil?
                 self.send(in_lock_callback, from: from, to: to, context: context)
