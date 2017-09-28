@@ -632,6 +632,7 @@ RSpec.describe Maxim do
     end
 
     it 'should generate edge methods which transition states' do
+      expect(@instance).to receive(:touch).at_least(:once)
       expect { @instance.move! }.to change(@instance, :state).from(:abc).to(:def)
     end
 
@@ -715,15 +716,18 @@ RSpec.describe Maxim do
     end
 
     it 'should generate event methods which check and transition' do
+      expect(@instance).to receive(:touch).at_least(:once)
       expect { @instance.foo! }.to change(@instance, :state).from(:abc).to(:ghi)
     end
 
     it 'should generate event methods which check and transition' do
+      expect(@instance).to receive(:touch).at_least(:once)
       expect { @instance.bar! }.to change(@instance, :state).from(:abc).to(:ghi)
     end
 
     it 'should generate event methods which check and transition' do
       @instance.update_column(:state, 2)
+      expect(@instance).to receive(:touch).at_least(:once)
       expect { @instance.foo! }.to change(@instance, :state).from(:def).to(:ghi)
     end
 
@@ -858,11 +862,14 @@ RSpec.describe Maxim do
       instance = SampleClass.new
       instance.update_column(:state, 1)
       expect(instance.state).to eq :abc
+
+      expect(instance).to receive(:touch).at_least(:once)
       expect { instance.move! }.to_not raise_error
 
       instance = SampleClass.new
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
+
       expect { instance.move! }.to raise_error(Maxim::InvalidTransitionError, "Invalid state transition")
     end
   end
@@ -928,11 +935,14 @@ RSpec.describe Maxim do
       instance = SampleClass.new
       instance.update_column(:state, 1)
       expect(instance.state).to eq :abc
+
+      expect(instance).to receive(:touch).at_least(:once)
       expect { instance.move!(:foobar) }.to_not raise_error
 
       instance = SampleClass.new
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
+
       expect { instance.move!(:foobar) }.to raise_error(Maxim::InvalidTransitionError, "Invalid state transition")
     end
   end
@@ -996,6 +1006,8 @@ RSpec.describe Maxim do
 
       expect(instance).to receive(:on_foo).with(hash_including(from: :abc, to: :def, context: :foobar)).once
       expect(instance).to receive(:after_foo).with(hash_including(from: :abc, to: :def, context: :foobar)).once
+
+      expect(instance).to receive(:touch).at_least(:once)
 
       instance.update_column(:state, 1)
       instance.foo!(:foobar)
