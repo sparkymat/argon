@@ -430,10 +430,10 @@ RSpec.describe Argon do
         class SampleClass
           include Argon
 
-          def on_foo(from:, to:, context:)
+          def on_foo
           end
 
-          def after_foo(from:, to:, context:)
+          def after_foo
           end
 
           state_machine state: {
@@ -473,10 +473,10 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`")
+      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:)`")
     end
 
-    it 'should only allow on_successful_transition as a lambda(from:, to:, context:)' do
+    it 'should only allow on_successful_transition as a lambda(from:, to:)' do
       expect {
         class SampleClass
           include Argon
@@ -495,7 +495,7 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`")
+      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:)`")
     end
 
     it 'should only allow on_failed_transition as a lambda' do
@@ -513,14 +513,14 @@ RSpec.describe Argon do
             edges: [
               {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
             ],
-            on_successful_transition: ->(from:, to:, context:) {},
+            on_successful_transition: ->(from:, to:) {},
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`")
+      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
     end
 
-    it 'should only allow on_failed_transition as a lambda(from:, to:, context:)' do
+    it 'should only allow on_failed_transition as a lambda(from:, to:)' do
       expect {
         class SampleClass
           include Argon
@@ -535,20 +535,20 @@ RSpec.describe Argon do
             edges: [
               {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
             ],
-            on_successful_transition: ->(from:, to:, context:) {},
+            on_successful_transition: ->(from:, to:) {},
             on_failed_transition:     ->(test:) {},
           }
         end
-      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`")
+      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
     end
   end
 
-  context 'it emulates the enum functionality with symbols' do
+  context 'emulates the enum functionality with symbols' do
     after do
       Object.send(:remove_const, :SampleClass)
     end
 
-    it 'should generate the state map, getter and scopes' do
+    it 'generates the state map, getter and scopes' do
       class SampleClass;end
 
       expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
@@ -567,7 +567,7 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
           ],
-          on_successful_transition: ->(from:, to:, context:) {},
+          on_successful_transition: ->(from:, to:) {},
           on_failed_transition:     ->(from:, to:) {},
         }
       end
@@ -617,8 +617,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
           ],
-          on_successful_transition: ->(from:, to:, context:) {},
-          on_failed_transition:     ->(from:, to:, context:) {},
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
         }
       end
 
@@ -675,16 +675,16 @@ RSpec.describe Argon do
       SampleClass.class_eval do
         include Argon
 
-        def on_foo(from:, to:, context:)
+        def on_foo
         end
 
-        def after_foo(from:, to:, context:)
+        def after_foo
         end
 
-        def on_bar(from:, to:, context:)
+        def on_bar
         end
 
-        def after_bar(from:, to:, context:)
+        def after_bar
         end
 
         state_machine state: {
@@ -701,8 +701,8 @@ RSpec.describe Argon do
             {from: :abc, to: :ghi, action: :move,      callbacks: {in: false, post: false},  on_events: [:foo, :bar]},
             {from: :def, to: :ghi, action: :dont_move, callbacks: {in: false, post: false},  on_events: [:foo]},
           ],
-          on_successful_transition: ->(from:, to:, context:) {},
-          on_failed_transition:     ->(from:, to:, context:) {},
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
         }
       end
 
@@ -775,10 +775,10 @@ RSpec.describe Argon do
         SampleClass.class_eval do
           include Argon
 
-          def on_foo(from:, to:, context:)
+          def on_foo
           end
 
-          def after_foo(from:, to:, context:)
+          def after_foo
           end
 
           state_machine state: {
@@ -793,8 +793,8 @@ RSpec.describe Argon do
               {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
               {from: :abc, to: :def, action: :walk, callbacks: {in: false, post: false}},
             ],
-            on_successful_transition: ->(from:, to:, context:) { },
-            on_failed_transition:     ->(from:, to:, context:) { },
+            on_successful_transition: ->(from:, to:) { },
+            on_failed_transition:     ->(from:, to:) { },
           }
         end
       }.to raise_error(Argon::Error, "`edges[1]` is a duplicate edge")
@@ -837,10 +837,10 @@ RSpec.describe Argon do
       SampleClass.class_eval do
         include Argon
 
-        def on_foo(from:, to:, context:)
+        def on_foo
         end
 
-        def after_foo(from:, to:, context:)
+        def after_foo
         end
 
         state_machine state: {
@@ -854,8 +854,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
           ],
-          on_successful_transition: ->(from:, to:, context:) { success.call(from: from, to: to) },
-          on_failed_transition:     ->(from:, to:, context:) { failure.call(from: from, to: to) },
+          on_successful_transition: ->(from:, to:) { success.call(from: from, to: to) },
+          on_failed_transition:     ->(from:, to:) { failure.call(from: from, to: to) },
         }
       end
 
@@ -881,10 +881,10 @@ RSpec.describe Argon do
 
     it 'should receive callbacks' do
       success = double('callback')
-      expect(success).to receive(:call).with(from: :abc, to: :def, context: :foobar)
+      expect(success).to receive(:call).with(from: :abc, to: :def)
 
       failure = double('callback')
-      expect(failure).to receive(:call).with(from: :def, to: :def, context: :foobar)
+      expect(failure).to receive(:call).with(from: :def, to: :def)
 
       class SampleClass
         def initialize
@@ -910,10 +910,10 @@ RSpec.describe Argon do
       SampleClass.class_eval do
         include Argon
 
-        def on_foo(from:, to:, context:)
+        def on_foo
         end
 
-        def after_foo(from:, to:, context:)
+        def after_foo
         end
 
         state_machine state: {
@@ -927,8 +927,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
           ],
-          on_successful_transition: ->(from:, to:, context:) { success.call(from: from, to: to, context: context) },
-          on_failed_transition:     ->(from:, to:, context:) { failure.call(from: from, to: to, context: context) },
+          on_successful_transition: ->(from:, to:) { success.call(from: from, to: to) },
+          on_failed_transition:     ->(from:, to:) { failure.call(from: from, to: to) },
         }
       end
 
@@ -937,13 +937,13 @@ RSpec.describe Argon do
       expect(instance.state).to eq :abc
 
       expect(instance).to receive(:touch).at_least(:once)
-      expect { instance.move!(:foobar) }.to_not raise_error
+      expect { instance.move! }.to_not raise_error
 
       instance = SampleClass.new
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
 
-      expect { instance.move!(:foobar) }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition")
+      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition")
     end
   end
 
@@ -977,10 +977,10 @@ RSpec.describe Argon do
       SampleClass.class_eval do
         include Argon
 
-        def on_foo(from:, to:, context:)
+        def on_foo
         end
 
-        def after_foo(from:, to:, context:)
+        def after_foo
         end
 
         state_machine state: {
@@ -994,26 +994,26 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, on_events: [:foo], callbacks: {in: true, post: true}},
           ],
-          on_successful_transition: ->(from:, to:, context:) {},
-          on_failed_transition:     ->(from:, to:, context:) {},
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
         }
       end
 
       instance = SampleClass.new
 
-      expect(instance).to receive(:on_move).with(hash_including(from: :abc, to: :def, context: :foobar)).twice
-      expect(instance).to receive(:after_move).with(hash_including(from: :abc, to: :def, context: :foobar)).twice
+      expect(instance).to receive(:on_move).with(no_args).twice
+      expect(instance).to receive(:after_move).with(no_args).twice
 
-      expect(instance).to receive(:on_foo).with(hash_including(from: :abc, to: :def, context: :foobar)).once
-      expect(instance).to receive(:after_foo).with(hash_including(from: :abc, to: :def, context: :foobar)).once
+      expect(instance).to receive(:on_foo).with(no_args).once
+      expect(instance).to receive(:after_foo).with(no_args).once
 
       expect(instance).to receive(:touch).at_least(:once)
 
       instance.update_column(:state, 1)
-      instance.foo!(:foobar)
+      instance.foo!
 
       instance.update_column(:state, 1)
-      instance.move!(:foobar)
+      instance.move!
     end
   end
 end

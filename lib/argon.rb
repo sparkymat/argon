@@ -32,8 +32,8 @@ module Argon
       raise Argon::Error.new("`events` should be an Array of Symbols") if !events_list.is_a?(Array) || (events_list.length > 0 && events_list.map(&:class).uniq != [Symbol])
       events_list.each do |event_name|
         raise Argon::Error.new("`#{event_name}` is not a valid event name. `#{self.name}##{event_name}` method already exists") if self.instance_methods.include?(event_name)
-        raise Argon::Error.new("`on_#{event_name}(from:, to:, context:)` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
-        raise Argon::Error.new("`after_#{event_name}(from:, to:, context:)` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
+        raise Argon::Error.new("`on_#{event_name}()` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [].to_set
+        raise Argon::Error.new("`after_#{event_name}()` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [].to_set
       end
 
       raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
@@ -63,11 +63,11 @@ module Argon
         registered_edge_pairs << [from, to]
       end
 
-      raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)
-      raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`") if on_successful_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set && on_successful_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
+      raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)
+      raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:)`") if on_successful_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set
 
-      raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
-      raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`") if on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set && on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to],[:keyreq, :context]].to_set
+      raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
+      raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set
 
       state_machines = {}
       begin
@@ -116,9 +116,9 @@ module Argon
           self.send(field) == from
         end
 
-        define_method("#{action}!".to_sym) do |context = nil, &block|
+        define_method("#{action}!".to_sym) do |&block|
           if self.send(field) != from
-            on_failed_transition.call(from: self.send(field), to: to, context: context)
+            on_failed_transition.call(from: self.send(field), to: to)
             raise Argon::InvalidTransitionError.new("Invalid state transition")
           end
 
@@ -128,7 +128,7 @@ module Argon
               self.touch
 
               unless in_lock_callback.nil?
-                self.send(in_lock_callback, from: from, to: to, context: context)
+                self.send(in_lock_callback)
               end
 
               unless block.nil?
@@ -136,32 +136,30 @@ module Argon
               end
             end
           rescue => e
-            on_failed_transition.call(from: self.send(field), to: to, context: context)
+            on_failed_transition.call(from: self.send(field), to: to)
             raise e
           end
 
-          on_successful_transition.call(from: from, to: to, context: context)
+          on_successful_transition.call(from: from, to: to)
 
           unless post_lock_callback.nil?
-            self.send(post_lock_callback, from: from, to: to, context: context)
+            self.send(post_lock_callback)
           end
         end
       end
 
       events_list.each do |event_name|
-        define_method("#{event_name}!".to_sym) do |context = nil|
+        define_method("#{event_name}!".to_sym) do
           matching_edges = edges_list.select{ |edge| !edge[:on_events].nil? && edge[:on_events].to_set.include?(event_name) }
 
           matching_edges.each do |edge|
             action = edge[:action]
-            from = edge[:from]
-            to = edge[:to]
 
             if self.send("can_#{ action }?")
-              self.send("#{ action }!", context) do
-                self.send("on_#{ event_name }", from: from, to: to, context: context)
+              self.send("#{ action }!") do
+                self.send("on_#{ event_name }")
               end
-              self.send("after_#{ event_name }", from: from, to: to, context: context)
+              self.send("after_#{ event_name }")
               return
             end
           end
