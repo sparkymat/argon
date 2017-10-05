@@ -1,16 +1,16 @@
 # coding: utf-8
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "maxim/version"
+require "argon/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "maxim"
-  spec.version       = Maxim::VERSION
+  spec.name          = "argon"
+  spec.version       = Argon::VERSION
   spec.authors       = ["Ajith Hussain"]
   spec.email         = ["csy0013@googlemail.com"]
 
-  spec.summary       = %q{Maxim provides a state machine implementation, built on top of Rails enum.}
-  spec.homepage      = "https://github.com/sparkymat/maxim"
+  spec.summary       = %q{Argon generates a workflow engine (built around a state machine)}
+  spec.homepage      = "https://github.com/sparkymat/argon"
   spec.license       = "MIT"
 
 
