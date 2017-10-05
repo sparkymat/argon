@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-RSpec.describe Maxim do
+RSpec.describe Argon do
   it 'has a version number' do
-    expect(Maxim::VERSION).not_to be nil
+    expect(Argon::VERSION).not_to be nil
   end
 
   context 'checks params structure' do
@@ -13,7 +13,7 @@ RSpec.describe Maxim do
     it 'should not allow without args' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine
         end
       }.to raise_error(ArgumentError)
@@ -22,37 +22,37 @@ RSpec.describe Maxim do
     it 'should not allow on non-Hash' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine :state
         end
-      }.to raise_error(Maxim::Error, "state_machine() has to be called on a Hash")
+      }.to raise_error(Argon::Error, "state_machine() has to be called on a Hash")
     end
 
     it 'should only allow a field and mappings' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine state: :foo
         end
-      }.to raise_error(Maxim::Error, "state_machine() has to specify a field and the mappings")
+      }.to raise_error(Argon::Error, "state_machine() has to specify a field and the mappings")
     end
 
     it 'should only allow states, events, edges and transition callbacks' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine state: {
             foo: 1,
             bar: 2,
           }
         end
-      }.to raise_error(Maxim::Error, "state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
+      }.to raise_error(Argon::Error, "state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
     end
 
     it 'should only allow Hash for states' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine state: {
             states: {
               foo: 1,
@@ -61,13 +61,13 @@ RSpec.describe Maxim do
             bar: 2,
           }
         end
-      }.to raise_error(Maxim::Error, "state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
+      }.to raise_error(Argon::Error, "state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
     end
 
     it 'should not allow empty states definitions' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine state: {
             states:                   {},
             events:                   2,
@@ -76,13 +76,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`states` does not specify any states")
+      }.to raise_error(Argon::Error, "`states` does not specify any states")
     end
 
     it 'should only allow state mappings to non Integers' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine state: {
             states: {
               foo: 'hello',
@@ -94,13 +94,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`states` must be a mapping of Symbols to unique Integers")
+      }.to raise_error(Argon::Error, "`states` must be a mapping of Symbols to unique Integers")
     end
 
     it 'should not allow state mappings from non-Symbols' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine state: {
             states: {
               1   => 1,
@@ -112,13 +112,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`states` must be a mapping of Symbols to unique Integers")
+      }.to raise_error(Argon::Error, "`states` must be a mapping of Symbols to unique Integers")
     end
 
     it 'should only allow unique Integer mappings for states' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
           state_machine state: {
             states: {
               foo: 1,
@@ -130,13 +130,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`states` must be a mapping of Symbols to unique Integers")
+      }.to raise_error(Argon::Error, "`states` must be a mapping of Symbols to unique Integers")
     end
 
     it 'should prevent clashes between existing singelton methods and state scope methods' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           def self.foo
           end
@@ -152,13 +152,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`foo` is an invalid state name. `SampleClass.foo` method already exists")
+      }.to raise_error(Argon::Error, "`foo` is an invalid state name. `SampleClass.foo` method already exists")
     end
 
     it 'should prevent clashes between existing instance methods and state check methods' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           def foo?
           end
@@ -174,13 +174,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`foo` is an invalid state name. `SampleClass#foo?` method already exists")
+      }.to raise_error(Argon::Error, "`foo` is an invalid state name. `SampleClass#foo?` method already exists")
     end
 
     it 'should only allow events as an array of Symbols' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -193,13 +193,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`events` should be an Array of Symbols")
+      }.to raise_error(Argon::Error, "`events` should be an Array of Symbols")
     end
 
     it 'should prevent clashes between existing instance methods and event methods' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           def foo
           end
@@ -218,13 +218,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`foo` is not a valid event name. `SampleClass#foo` method already exists")
+      }.to raise_error(Argon::Error, "`foo` is not a valid event name. `SampleClass#foo` method already exists")
     end
 
     it 'should only allow edges as an Array of Hashes' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -238,13 +238,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)")
+      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)")
     end
 
     it 'should only allow edges with the right keys' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -261,13 +261,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)")
+      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)")
     end
 
     it 'should only allow edges from valid states' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -283,13 +283,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges[0].from` is not a valid state")
+      }.to raise_error(Argon::Error, "`edges[0].from` is not a valid state")
     end
 
     it 'should only allow edges to valid states' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -305,13 +305,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges[0].to` is not a valid state")
+      }.to raise_error(Argon::Error, "`edges[0].to` is not a valid state")
     end
 
     it 'should only allow edge action as a valid Symbol' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -327,13 +327,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges[0].action` is not a Symbol")
+      }.to raise_error(Argon::Error, "`edges[0].action` is not a Symbol")
     end
 
     it 'should not allow edge action to conflict with an existing method' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           def foo!
           end
@@ -352,13 +352,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`foo` is an invalid action name. `SampleClass#foo!` method already exists")
+      }.to raise_error(Argon::Error, "`foo` is an invalid action name. `SampleClass#foo!` method already exists")
     end
 
     it 'should not allow edge check action to conflict with an existing method' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           def can_foo?
           end
@@ -377,13 +377,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`foo` is an invalid action name. `SampleClass#can_foo?` method already exists")
+      }.to raise_error(Argon::Error, "`foo` is an invalid action name. `SampleClass#can_foo?` method already exists")
     end
 
     it 'should only allow edge callbacks as {in: true/false, post: true/false}' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -399,13 +399,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`edges[0].callbacks` must be {in: true/false, post: true/false}")
+      }.to raise_error(Argon::Error, "`edges[0].callbacks` must be {in: true/false, post: true/false}")
     end
 
     it 'should only allow edge on_events as array of Symbols' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -421,14 +421,14 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`bar` (`edges[0].on_events`) is not a valid list of events")
+      }.to raise_error(Argon::Error, "`bar` (`edges[0].on_events`) is not a valid list of events")
     end
 
 
     it 'should only allow edge on_events from the event list' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           def on_foo(from:, to:, context:)
           end
@@ -451,13 +451,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`bar` (`edges[0].on_events[0]`) is not a registered event")
+      }.to raise_error(Argon::Error, "`bar` (`edges[0].on_events[0]`) is not a registered event")
     end
 
     it 'should only allow on_successful_transition as a lambda' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -473,13 +473,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`")
+      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`")
     end
 
     it 'should only allow on_successful_transition as a lambda(from:, to:, context:)' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -495,13 +495,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`")
+      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:, context:)`")
     end
 
     it 'should only allow on_failed_transition as a lambda' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -517,13 +517,13 @@ RSpec.describe Maxim do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Maxim::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`")
+      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`")
     end
 
     it 'should only allow on_failed_transition as a lambda(from:, to:, context:)' do
       expect {
         class SampleClass
-          include Maxim
+          include Argon
 
           state_machine state: {
             states: {
@@ -539,7 +539,7 @@ RSpec.describe Maxim do
             on_failed_transition:     ->(test:) {},
           }
         end
-      }.to raise_error(Maxim::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`")
+      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:, context:)`")
     end
   end
 
@@ -555,7 +555,7 @@ RSpec.describe Maxim do
       expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
 
       SampleClass.class_eval do
-        include Maxim
+        include Argon
 
         state_machine state: {
           states: {
@@ -605,7 +605,7 @@ RSpec.describe Maxim do
       expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
 
       SampleClass.class_eval do
-        include Maxim
+        include Argon
 
         state_machine state: {
           states: {
@@ -644,7 +644,7 @@ RSpec.describe Maxim do
 
     it 'should generate edge methods which throw error if state not correct' do
       @instance.update_column(:state, 2)
-      expect { @instance.move! }.to raise_error(Maxim::InvalidTransitionError)
+      expect { @instance.move! }.to raise_error(Argon::InvalidTransitionError)
     end
   end
 
@@ -673,7 +673,7 @@ RSpec.describe Maxim do
       expect(SampleClass).to receive(:scope).with(:ghi, instance_of(Proc))
 
       SampleClass.class_eval do
-        include Maxim
+        include Argon
 
         def on_foo(from:, to:, context:)
         end
@@ -733,17 +733,17 @@ RSpec.describe Maxim do
 
     it 'should throw exception if generated event method can\'t find a valid edge' do
       @instance.update_column(:state, 2)
-      expect { @instance.bar! }.to raise_error(Maxim::InvalidTransitionError, "No valid transitions")
+      expect { @instance.bar! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions")
     end
 
     it 'should throw exception if generated event method has no edges' do
       @instance.update_column(:state, 3)
-      expect { @instance.foo! }.to raise_error(Maxim::InvalidTransitionError, "No valid transitions")
+      expect { @instance.foo! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions")
     end
 
     it 'should throw exception if generated event method has no edges' do
       @instance.update_column(:state, 3)
-      expect { @instance.bar! }.to raise_error(Maxim::InvalidTransitionError, "No valid transitions")
+      expect { @instance.bar! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions")
     end
   end
 
@@ -773,7 +773,7 @@ RSpec.describe Maxim do
 
       expect {
         SampleClass.class_eval do
-          include Maxim
+          include Argon
 
           def on_foo(from:, to:, context:)
           end
@@ -797,7 +797,7 @@ RSpec.describe Maxim do
             on_failed_transition:     ->(from:, to:, context:) { },
           }
         end
-      }.to raise_error(Maxim::Error, "`edges[1]` is a duplicate edge")
+      }.to raise_error(Argon::Error, "`edges[1]` is a duplicate edge")
     end
   end
 
@@ -835,7 +835,7 @@ RSpec.describe Maxim do
       expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
 
       SampleClass.class_eval do
-        include Maxim
+        include Argon
 
         def on_foo(from:, to:, context:)
         end
@@ -870,7 +870,7 @@ RSpec.describe Maxim do
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
 
-      expect { instance.move! }.to raise_error(Maxim::InvalidTransitionError, "Invalid state transition")
+      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition")
     end
   end
 
@@ -908,7 +908,7 @@ RSpec.describe Maxim do
       expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
 
       SampleClass.class_eval do
-        include Maxim
+        include Argon
 
         def on_foo(from:, to:, context:)
         end
@@ -943,7 +943,7 @@ RSpec.describe Maxim do
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
 
-      expect { instance.move!(:foobar) }.to raise_error(Maxim::InvalidTransitionError, "Invalid state transition")
+      expect { instance.move!(:foobar) }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition")
     end
   end
 
@@ -975,7 +975,7 @@ RSpec.describe Maxim do
       expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
 
       SampleClass.class_eval do
-        include Maxim
+        include Argon
 
         def on_foo(from:, to:, context:)
         end
