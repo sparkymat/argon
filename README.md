@@ -26,6 +26,14 @@ The `Maxim` module provides a `state_machine` class method which expects the fol
   class Report
     include Argon
 
+    def on_cancel
+      # This is called from inside the lock, after the edge transitions. If an exception is thrown here, the entire transition is rolled back
+    end
+
+    def after_cancel
+      # This is called after a successful transition
+    end
+
     state_machine state: {
       states: {
         draft:     0,
@@ -42,8 +50,8 @@ The `Maxim` module provides a `state_machine` class method which expects the fol
         { from: :draft,     to: :cancelled, action: :cancel_draft,     callbacks: {in: false, post: false}, on_events: [:cancel] },
         { from: :submitted, to: :cancelled, action: :cancel_submitted, callbacks: {in: false, post: false}, on_events: [:cancel] },
       ],
-      on_successful_transition: ->(from:, to:, context:) { /* Do something here */ },
-      on_failed_transition:     ->(from:, to:, context:) { /* Do something else */ },
+      on_successful_transition: ->(from:, to:) { /* Do something here */ },
+      on_failed_transition:     ->(from:, to:) { /* Do something else */ },
     }
   end
 ```
@@ -57,7 +65,7 @@ This will generate the following methods for the states:
 
 The following methods are generated from the edges:
 
-* `Report#submit!` : This will move the state to `submitted` if the object was in the `draft` state. The state change is done inside a lock (`ActiveRecord::Locking::Pessimistic#with_lock`). If `callbacks.in` was true, then `Report#on_submit(from:, to:)` is called from within the lock, with `from` as `:draft`, and `to` as `:submitted`. If `callbacks.after` was true, then `Report#after_submit(from:, to:)` will be called with the same args, after the lock is released. Note that if enabled, the callbacks have to be defined before `state_machine` is called, or an exception will be raised.
+* `Report#submit!` : This will move the state to `submitted` if the object was in the `draft` state. The state change is done inside a lock (`ActiveRecord::Locking::Pessimistic#with_lock`). If `callbacks.in` was true, then `Report#on_submit` is called from within the lock. If `callbacks.post` was true, then `Report#after_submit` will be called, after the lock is released. Note that if enabled, the callbacks have to be defined before `state_machine` is called, or an exception will be raised.
 * `Report#can_submit?` : This will return `true` if the object was in the `draft` state.
 
   (similar methods are created for `cancel_draft` and `cancel_submitted`)
