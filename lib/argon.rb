@@ -53,6 +53,12 @@ module Argon
         raise Argon::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{do_action}` method already exists") if self.instance_methods.include?(do_action)
         raise Argon::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{check_action}` method already exists") if self.instance_methods.include?(check_action)
         raise Argon::Error.new("`edges[#{index}].callbacks` must be {in: true/false, post: true/false}") if !edge_details[:callbacks].is_a?(Hash) || edge_details[:callbacks].keys.to_set != [:post, :in].to_set || !edge_details[:callbacks].values.to_set.subset?([true, false].to_set)
+        if edge_details[:callbacks][:in]
+          raise Argon::Error.new("`on_#{edge_details[:action]}()` not found") if !self.instance_methods.include?("on_#{edge_details[:action]}".to_sym) || self.instance_method("on_#{edge_details[:action]}".to_sym).parameters.to_set != [].to_set
+        end
+        if edge_details[:callbacks][:post]
+          raise Argon::Error.new("`after_#{edge_details[:action]}()` not found") if !self.instance_methods.include?("after_#{edge_details[:action]}".to_sym) || self.instance_method("after_#{edge_details[:action]}".to_sym).parameters.to_set != [].to_set
+        end
         raise Argon::Error.new("`#{edge_details[:on_events]}` (`edges[#{index}].on_events`) is not a valid list of events") if !edge_details[:on_events].nil? && !edge_details[:on_events].is_a?(Array)
         unless edge_details[:on_events].nil?
           edge_details[:on_events].each_with_index do |event_name, event_index|

@@ -983,6 +983,12 @@ RSpec.describe Argon do
         def after_foo
         end
 
+        def on_move
+        end
+
+        def after_move
+        end
+
         state_machine state: {
           states: {
             abc: 1,
