@@ -46,9 +46,9 @@ The `Maxim` module provides a `state_machine` class method which expects the fol
         :cancel,
       ],
       edges: [
-        { from: :draft,     to: :submitted, action: :submit,           callbacks: {in: false, post: false}                       },
-        { from: :draft,     to: :cancelled, action: :cancel_draft,     callbacks: {in: false, post: false}, on_events: [:cancel] },
-        { from: :submitted, to: :cancelled, action: :cancel_submitted, callbacks: {in: false, post: false}, on_events: [:cancel] },
+        { from: :draft,     to: :submitted, action: :submit,           callbacks: {on: false, after: false}                       },
+        { from: :draft,     to: :cancelled, action: :cancel_draft,     callbacks: {on: false, after: false}, on_events: [:cancel] },
+        { from: :submitted, to: :cancelled, action: :cancel_submitted, callbacks: {on: false, after: false}, on_events: [:cancel] },
       ],
       on_successful_transition: ->(from:, to:) { /* Do something here */ },
       on_failed_transition:     ->(from:, to:) { /* Do something else */ },
