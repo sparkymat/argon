@@ -36,7 +36,7 @@ module Argon
         raise Argon::Error.new("`after_#{event_name}()` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [].to_set
       end
 
-      raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
+      raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
 
       registered_edge_pairs = [].to_set
       edges_list.each_with_index do |edge_details, index|
@@ -46,17 +46,17 @@ module Argon
         do_action    = "#{action}!".to_sym
         check_action = "can_#{action}?".to_sym
 
-        raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :callbacks, :on_events].to_set) && [:from, :to, :action, :callbacks].to_set.subset?(edge_details.keys.to_set)
+        raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :callbacks, :on_events].to_set) && [:from, :to, :action, :callbacks].to_set.subset?(edge_details.keys.to_set)
         raise Argon::Error.new("`edges[#{index}].from` is not a valid state") unless states_map.keys.include?(from)
         raise Argon::Error.new("`edges[#{index}].to` is not a valid state") unless states_map.keys.include?(to)
         raise Argon::Error.new("`edges[#{index}].action` is not a Symbol") unless action.is_a?(Symbol)
         raise Argon::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{do_action}` method already exists") if self.instance_methods.include?(do_action)
         raise Argon::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{check_action}` method already exists") if self.instance_methods.include?(check_action)
-        raise Argon::Error.new("`edges[#{index}].callbacks` must be {in: true/false, post: true/false}") if !edge_details[:callbacks].is_a?(Hash) || edge_details[:callbacks].keys.to_set != [:post, :in].to_set || !edge_details[:callbacks].values.to_set.subset?([true, false].to_set)
-        if edge_details[:callbacks][:in]
+        raise Argon::Error.new("`edges[#{index}].callbacks` must be {on: true/false, after: true/false}") if !edge_details[:callbacks].is_a?(Hash) || edge_details[:callbacks].keys.to_set != [:after, :on].to_set || !edge_details[:callbacks].values.to_set.subset?([true, false].to_set)
+        if edge_details[:callbacks][:on]
           raise Argon::Error.new("`on_#{edge_details[:action]}()` not found") if !self.instance_methods.include?("on_#{edge_details[:action]}".to_sym) || self.instance_method("on_#{edge_details[:action]}".to_sym).parameters.to_set != [].to_set
         end
-        if edge_details[:callbacks][:post]
+        if edge_details[:callbacks][:after]
           raise Argon::Error.new("`after_#{edge_details[:action]}()` not found") if !self.instance_methods.include?("after_#{edge_details[:action]}".to_sym) || self.instance_method("after_#{edge_details[:action]}".to_sym).parameters.to_set != [].to_set
         end
         raise Argon::Error.new("`#{edge_details[:on_events]}` (`edges[#{index}].on_events`) is not a valid list of events") if !edge_details[:on_events].nil? && !edge_details[:on_events].is_a?(Array)
@@ -115,8 +115,8 @@ module Argon
         from               = edge_details[:from]
         to                 = edge_details[:to]
         action             = edge_details[:action]
-        in_lock_callback   = "on_#{action}".to_sym if edge_details[:callbacks][:in] == true
-        post_lock_callback = "after_#{action}".to_sym if edge_details[:callbacks][:post] == true
+        on_lock_callback   = "on_#{action}".to_sym if edge_details[:callbacks][:on] == true
+        after_lock_callback = "after_#{action}".to_sym if edge_details[:callbacks][:after] == true
 
         define_method("can_#{action}?".to_sym) do
           self.send(field) == from
@@ -133,8 +133,8 @@ module Argon
               self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
               self.touch
 
-              unless in_lock_callback.nil?
-                self.send(in_lock_callback)
+              unless on_lock_callback.nil?
+                self.send(on_lock_callback)
               end
 
               unless block.nil?
@@ -148,8 +148,8 @@ module Argon
 
           on_successful_transition.call(from: from, to: to)
 
-          unless post_lock_callback.nil?
-            self.send(post_lock_callback)
+          unless after_lock_callback.nil?
+            self.send(after_lock_callback)
           end
         end
       end

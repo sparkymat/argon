@@ -238,7 +238,7 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)")
+      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)")
     end
 
     it 'should only allow edges with the right keys' do
@@ -261,7 +261,7 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{in: true/false, post: true/false}, on_events (optional)")
+      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)")
     end
 
     it 'should only allow edges from valid states' do
@@ -380,7 +380,7 @@ RSpec.describe Argon do
       }.to raise_error(Argon::Error, "`foo` is an invalid action name. `SampleClass#can_foo?` method already exists")
     end
 
-    it 'should only allow edge callbacks as {in: true/false, post: true/false}' do
+    it 'should only allow edge callbacks as {on: true/false, after: true/false}' do
       expect {
         class SampleClass
           include Argon
@@ -399,7 +399,7 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`edges[0].callbacks` must be {in: true/false, post: true/false}")
+      }.to raise_error(Argon::Error, "`edges[0].callbacks` must be {on: true/false, after: true/false}")
     end
 
     it 'should only allow edge on_events as array of Symbols' do
@@ -415,7 +415,7 @@ RSpec.describe Argon do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}, on_events: :bar},
+              {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}, on_events: :bar},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -445,7 +445,7 @@ RSpec.describe Argon do
               :foo,
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}, on_events: [:bar]},
+              {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}, on_events: [:bar]},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -467,7 +467,7 @@ RSpec.describe Argon do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
+              {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}},
             ],
             on_successful_transition: 4,
             on_failed_transition:     5,
@@ -489,7 +489,7 @@ RSpec.describe Argon do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
+              {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}},
             ],
             on_successful_transition: ->(test:) {},
             on_failed_transition:     5,
@@ -511,7 +511,7 @@ RSpec.describe Argon do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
+              {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}},
             ],
             on_successful_transition: ->(from:, to:) {},
             on_failed_transition:     5,
@@ -533,7 +533,7 @@ RSpec.describe Argon do
             events: [
             ],
             edges: [
-              {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
+              {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}},
             ],
             on_successful_transition: ->(from:, to:) {},
             on_failed_transition:     ->(test:) {},
@@ -565,7 +565,7 @@ RSpec.describe Argon do
           events: [
           ],
           edges: [
-            {from: :abc, to: :def, action: :ghi, callbacks: {in: false, post: false}},
+            {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}},
           ],
           on_successful_transition: ->(from:, to:) {},
           on_failed_transition:     ->(from:, to:) {},
@@ -615,7 +615,7 @@ RSpec.describe Argon do
           events: [
           ],
           edges: [
-            {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
+            {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
           ],
           on_successful_transition: ->(from:, to:) {},
           on_failed_transition:     ->(from:, to:) {},
@@ -698,8 +698,8 @@ RSpec.describe Argon do
             :bar,
           ],
           edges: [
-            {from: :abc, to: :ghi, action: :move,      callbacks: {in: false, post: false},  on_events: [:foo, :bar]},
-            {from: :def, to: :ghi, action: :dont_move, callbacks: {in: false, post: false},  on_events: [:foo]},
+            {from: :abc, to: :ghi, action: :move,      callbacks: {on: false, after: false},  on_events: [:foo, :bar]},
+            {from: :def, to: :ghi, action: :dont_move, callbacks: {on: false, after: false},  on_events: [:foo]},
           ],
           on_successful_transition: ->(from:, to:) {},
           on_failed_transition:     ->(from:, to:) {},
@@ -790,8 +790,8 @@ RSpec.describe Argon do
               :foo,
             ],
             edges: [
-              {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
-              {from: :abc, to: :def, action: :walk, callbacks: {in: false, post: false}},
+              {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
+              {from: :abc, to: :def, action: :walk, callbacks: {on: false, after: false}},
             ],
             on_successful_transition: ->(from:, to:) { },
             on_failed_transition:     ->(from:, to:) { },
@@ -852,7 +852,7 @@ RSpec.describe Argon do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
+            {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
           ],
           on_successful_transition: ->(from:, to:) { success.call(from: from, to: to) },
           on_failed_transition:     ->(from:, to:) { failure.call(from: from, to: to) },
@@ -925,7 +925,7 @@ RSpec.describe Argon do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :def, action: :move, callbacks: {in: false, post: false}},
+            {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
           ],
           on_successful_transition: ->(from:, to:) { success.call(from: from, to: to) },
           on_failed_transition:     ->(from:, to:) { failure.call(from: from, to: to) },
@@ -947,7 +947,7 @@ RSpec.describe Argon do
     end
   end
 
-  context 'in/post lock callbacks' do
+  context 'on/after lock callbacks' do
     after do
       Object.send(:remove_const, :SampleClass)
     end
@@ -998,7 +998,7 @@ RSpec.describe Argon do
             :foo,
           ],
           edges: [
-            {from: :abc, to: :def, action: :move, on_events: [:foo], callbacks: {in: true, post: true}},
+            {from: :abc, to: :def, action: :move, on_events: [:foo], callbacks: {on: true, after: true}},
           ],
           on_successful_transition: ->(from:, to:) {},
           on_failed_transition:     ->(from:, to:) {},
