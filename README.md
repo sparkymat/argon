@@ -26,12 +26,12 @@ The `Maxim` module provides a `state_machine` class method which expects the fol
   class Report
     include Argon
 
-    def on_cancel
-      # This is called from inside the lock, after the edge transitions. If an exception is thrown here, the entire transition is rolled back
+    def on_cancel(action:)
+      # This is called from inside the lock, after the edge transitions, with the name of the action. If an exception is thrown here, the entire transition is rolled back
     end
 
-    def after_cancel
-      # This is called after a successful transition
+    def after_cancel(action:)
+      # This is called after a successful transition, with the action which actually succeeded
     end
 
     state_machine state: {
