@@ -32,8 +32,8 @@ module Argon
       raise Argon::Error.new("`events` should be an Array of Symbols") if !events_list.is_a?(Array) || (events_list.length > 0 && events_list.map(&:class).uniq != [Symbol])
       events_list.each do |event_name|
         raise Argon::Error.new("`#{event_name}` is not a valid event name. `#{self.name}##{event_name}` method already exists") if self.instance_methods.include?(event_name)
-        raise Argon::Error.new("`on_#{event_name}()` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [].to_set
-        raise Argon::Error.new("`after_#{event_name}()` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [].to_set
+        raise Argon::Error.new("`on_#{event_name}(action:)` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
+        raise Argon::Error.new("`after_#{event_name}(action:)` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
       end
 
       raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
@@ -163,9 +163,9 @@ module Argon
 
             if self.send("can_#{ action }?")
               self.send("#{ action }!") do
-                self.send("on_#{ event_name }")
+                self.send("on_#{ event_name }", action: action)
               end
-              self.send("after_#{ event_name }")
+              self.send("after_#{ event_name }", action: action)
               return
             end
           end

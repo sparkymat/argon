@@ -430,10 +430,10 @@ RSpec.describe Argon do
         class SampleClass
           include Argon
 
-          def on_foo
+          def on_foo(action:)
           end
 
-          def after_foo
+          def after_foo(action:)
           end
 
           state_machine state: {
@@ -675,16 +675,16 @@ RSpec.describe Argon do
       SampleClass.class_eval do
         include Argon
 
-        def on_foo
+        def on_foo(action:)
         end
 
-        def after_foo
+        def after_foo(action:)
         end
 
-        def on_bar
+        def on_bar(action:)
         end
 
-        def after_bar
+        def after_bar(action:)
         end
 
         state_machine state: {
@@ -775,10 +775,10 @@ RSpec.describe Argon do
         SampleClass.class_eval do
           include Argon
 
-          def on_foo
+          def on_foo(action:)
           end
 
-          def after_foo
+          def after_foo(action:)
           end
 
           state_machine state: {
@@ -837,10 +837,10 @@ RSpec.describe Argon do
       SampleClass.class_eval do
         include Argon
 
-        def on_foo
+        def on_foo(action:)
         end
 
-        def after_foo
+        def after_foo(action:)
         end
 
         state_machine state: {
@@ -910,10 +910,10 @@ RSpec.describe Argon do
       SampleClass.class_eval do
         include Argon
 
-        def on_foo
+        def on_foo(action:)
         end
 
-        def after_foo
+        def after_foo(action:)
         end
 
         state_machine state: {
@@ -977,10 +977,10 @@ RSpec.describe Argon do
       SampleClass.class_eval do
         include Argon
 
-        def on_foo
+        def on_foo(action:)
         end
 
-        def after_foo
+        def after_foo(action:)
         end
 
         def on_move
@@ -1010,8 +1010,8 @@ RSpec.describe Argon do
       expect(instance).to receive(:on_move).with(no_args).twice
       expect(instance).to receive(:after_move).with(no_args).twice
 
-      expect(instance).to receive(:on_foo).with(no_args).once
-      expect(instance).to receive(:after_foo).with(no_args).once
+      expect(instance).to receive(:on_foo).with(hash_including(action: :move)).once
+      expect(instance).to receive(:after_foo).with(hash_including(action: :move)).once
 
       expect(instance).to receive(:touch).at_least(:once)
 
