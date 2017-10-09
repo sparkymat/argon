@@ -42,11 +42,11 @@ module Argon
           raise Argon::Error.new("`parameters.#{param_name}` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object)}") if param_details.keys.to_set != %i(name has_default_value default_value check).to_set
           raise Argon::Error.new("`parameters.#{param_name}.name` should be a Symbol") unless param_details[:name].is_a?(Symbol)
           raise Argon::Error.new("`parameters.#{param_name}.has_default_value` should be true/false") unless [true, false].include?(param_details[:has_default_value])
-          raise Argon::Error.new("`parameters.#{param_name}.check` should be a lambda that takes one arg") if !param_details[:check].is_a?(Proc) || param_details[:check].parameters.to_set != [[:req, :object]].to_set
+          raise Argon::Error.new("`parameters.#{param_name}.check` should be a lambda that takes one arg") if !param_details[:check].is_a?(Proc) || !(param_details[:check].parameters.length == 1 && param_details[:check].parameters[0].length == 2 && param_details[:check].parameters[0][0] == :req && param_details[:check].parameters[0][1].is_a?(Symbol))
         end
       end
 
-      raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]
+      raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).to_set != [Hash].to_set
 
       registered_edge_pairs = [].to_set
       edges_list.each_with_index do |edge_details, index|
@@ -56,7 +56,7 @@ module Argon
         do_action    = "#{action}!".to_sym
         check_action = "can_#{action}?".to_sym
 
-        raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :callbacks, :on_events].to_set) && [:from, :to, :action, :callbacks].to_set.subset?(edge_details.keys.to_set)
+        raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :callbacks, :on_events, :parameters].to_set) && [:from, :to, :action, :callbacks].to_set.subset?(edge_details.keys.to_set)
         raise Argon::Error.new("`edges[#{index}].from` is not a valid state") unless states_map.keys.include?(from)
         raise Argon::Error.new("`edges[#{index}].to` is not a valid state") unless states_map.keys.include?(to)
         raise Argon::Error.new("`edges[#{index}].action` is not a Symbol") unless action.is_a?(Symbol)
@@ -73,6 +73,11 @@ module Argon
         unless edge_details[:on_events].nil?
           edge_details[:on_events].each_with_index do |event_name, event_index|
             raise Argon::Error.new("`#{ event_name }` (`edges[#{index}].on_events[#{event_index}]`) is not a registered event") unless events_list.include?(event_name)
+          end
+        end
+        unless edge_details[:parameters].nil?
+          edge_details[:parameters].each_with_index do |param_name, param_index|
+            raise Argon::Error.new("`#{ param_name }` (`edges[#{index}].parameters[#{param_index}]`) is not a registered parameter") unless parameters.keys.include?(param_name)
           end
         end
         raise Argon::Error.new("`edges[#{index}]` is a duplicate edge") if registered_edge_pairs.include?([from,to])

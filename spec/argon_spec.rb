@@ -238,7 +238,7 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)")
+      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)")
     end
 
     it 'should only allow edges with the right keys' do
@@ -261,7 +261,7 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)")
+      }.to raise_error(Argon::Error, "`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)")
     end
 
     it 'should only allow edges from valid states' do
@@ -688,6 +688,36 @@ RSpec.describe Argon do
           }
         end
       }.to raise_error(Argon::Error, "`parameters.foo_message.check` should be a lambda that takes one arg")
+    end
+
+    it 'should only allow edges to use parameters defined in `parameters`' do
+      expect {
+        class SampleClass
+          include Argon
+
+          state_machine state: {
+            states: {
+              initial: 1,
+              final:   2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: false, after: false}, parameters: [:foo_bar]},
+            ],
+            parameters: {
+              foo_message: {
+                name:              :message,
+                has_default_value: true,
+                default_value:     nil,
+                check:             ->(object) {},
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`foo_bar` (`edges[0].parameters[0]`) is not a registered parameter")
     end
   end
 
