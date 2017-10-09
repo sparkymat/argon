@@ -12,11 +12,12 @@ module Argon
     def state_machine(mapping)
       raise Argon::Error.new("state_machine() has to be called on a Hash") unless mapping.is_a?(Hash)
       raise Argon::Error.new("state_machine() has to specify a field and the mappings") unless mapping.keys.count == 1 && mapping.keys.first.is_a?(Symbol) && mapping.values.first.is_a?(Hash)
-      raise Argon::Error.new("state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition") if mapping.values.first.keys.sort != %i(states events edges on_successful_transition on_failed_transition).sort
+      raise Argon::Error.new("state_machine() should have (only) the following mappings: states, events, edges, parameters (optional), on_successful_transition, on_failed_transition") unless mapping.values.first.keys.to_set.subset?(%i(states events edges on_successful_transition on_failed_transition parameters).to_set) && %i(states events edges on_successful_transition on_failed_transition).to_set.subset?(mapping.values.first.keys.to_set)
 
       field                    = mapping.keys.first
       states_map               = mapping.values.first[:states]
       events_list              = mapping.values.first[:events]
+      parameters               = mapping.values.first[:parameters]
       edges_list               = mapping.values.first[:edges]
       on_successful_transition = mapping.values.first[:on_successful_transition]
       on_failed_transition     = mapping.values.first[:on_failed_transition]
@@ -34,6 +35,15 @@ module Argon
         raise Argon::Error.new("`#{event_name}` is not a valid event name. `#{self.name}##{event_name}` method already exists") if self.instance_methods.include?(event_name)
         raise Argon::Error.new("`on_#{event_name}(action:)` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
         raise Argon::Error.new("`after_#{event_name}(action:)` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
+      end
+      raise Argon::Error.new("`parameters` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object)}") if !parameters.nil? && !parameters.is_a?(Hash) && parameters.keys.map(&:class).to_set != [Symbol].to_set
+      if !parameters.nil?
+        parameters.each_pair do |param_name, param_details|
+          raise Argon::Error.new("`parameters.#{param_name}` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object)}") if param_details.keys.to_set != %i(name has_default_value default_value check).to_set
+          raise Argon::Error.new("`parameters.#{param_name}.name` should be a Symbol") unless param_details[:name].is_a?(Symbol)
+          raise Argon::Error.new("`parameters.#{param_name}.has_default_value` should be true/false") unless [true, false].include?(param_details[:has_default_value])
+          raise Argon::Error.new("`parameters.#{param_name}.check` should be a lambda that takes one arg") if !param_details[:check].is_a?(Proc) || param_details[:check].parameters.to_set != [[:req, :object]].to_set
+        end
       end
 
       raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).uniq != [Hash]

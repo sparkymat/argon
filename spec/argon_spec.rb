@@ -46,7 +46,7 @@ RSpec.describe Argon do
             bar: 2,
           }
         end
-      }.to raise_error(Argon::Error, "state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
+      }.to raise_error(Argon::Error, "state_machine() should have (only) the following mappings: states, events, edges, parameters (optional), on_successful_transition, on_failed_transition")
     end
 
     it 'should only allow Hash for states' do
@@ -61,7 +61,7 @@ RSpec.describe Argon do
             bar: 2,
           }
         end
-      }.to raise_error(Argon::Error, "state_machine() should have (only) the following mappings: states, events, edges, on_successful_transition, on_failed_transition")
+      }.to raise_error(Argon::Error, "state_machine() should have (only) the following mappings: states, events, edges, parameters (optional), on_successful_transition, on_failed_transition")
     end
 
     it 'should not allow empty states definitions' do
@@ -540,6 +540,154 @@ RSpec.describe Argon do
           }
         end
       }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
+    end
+
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+      expect {
+        class SampleClass
+          include Argon
+
+          state_machine state: {
+            states: {
+              initial: 1,
+              final:   2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: false, after: false}},
+            ],
+            parameters: {
+              foo_message: {
+                foo: nil,
+                bar: 0,
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`parameters.foo_message` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object)}")
+    end
+
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+      expect {
+        class SampleClass
+          include Argon
+
+          state_machine state: {
+            states: {
+              abc: 1,
+              def: 2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: false, after: false}},
+            ],
+            parameters: {
+              foo_message: {
+                name:              nil,
+                has_default_value: 0,
+                default_value:     nil,
+                check:             nil,
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`parameters.foo_message.name` should be a Symbol")
+    end
+
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+      expect {
+        class SampleClass
+          include Argon
+
+          state_machine state: {
+            states: {
+              abc: 1,
+              def: 2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: false, after: false}},
+            ],
+            parameters: {
+              foo_message: {
+                name:              :message,
+                has_default_value: 0,
+                default_value:     nil,
+                check:             nil,
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`parameters.foo_message.has_default_value` should be true/false")
+    end
+
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+      expect {
+        class SampleClass
+          include Argon
+
+          state_machine state: {
+            states: {
+              abc: 1,
+              def: 2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: false, after: false}},
+            ],
+            parameters: {
+              foo_message: {
+                name:              :message,
+                has_default_value: true,
+                default_value:     nil,
+                check:             nil,
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`parameters.foo_message.check` should be a lambda that takes one arg")
+    end
+
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+      expect {
+        class SampleClass
+          include Argon
+
+          state_machine state: {
+            states: {
+              abc: 1,
+              def: 2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: false, after: false}},
+            ],
+            parameters: {
+              foo_message: {
+                name:              :message,
+                has_default_value: true,
+                default_value:     nil,
+                check:             ->() {},
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`parameters.foo_message.check` should be a lambda that takes one arg")
     end
   end
 
