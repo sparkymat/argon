@@ -1,12 +1,15 @@
 require 'argon/version'
 require 'argon/error'
 require 'argon/invalid_transition_error'
+require 'argon/invalid_parameter_error'
 require 'active_support/concern'
 require 'active_support/inflector'
 require 'pry-byebug'
 
 module Argon
   extend ActiveSupport::Concern
+  extend ActiveSupport::Inflector
+  include ActiveSupport::Inflector
 
   module ClassMethods
     def state_machine(mapping)
@@ -36,12 +39,11 @@ module Argon
         raise Argon::Error.new("`on_#{event_name}(action:)` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
         raise Argon::Error.new("`after_#{event_name}(action:)` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
       end
-      raise Argon::Error.new("`parameters` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object)}") if !parameters.nil? && !parameters.is_a?(Hash) && parameters.keys.map(&:class).to_set != [Symbol].to_set
+      raise Argon::Error.new("`parameters` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, check: lambda(object)}") if !parameters.nil? && !parameters.is_a?(Hash) && parameters.keys.map(&:class).to_set != [Symbol].to_set
       if !parameters.nil?
         parameters.each_pair do |param_name, param_details|
-          raise Argon::Error.new("`parameters.#{param_name}` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object)}") if param_details.keys.to_set != %i(name has_default_value default_value check).to_set
+          raise Argon::Error.new("`parameters.#{param_name}` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, check: lambda(object)}") if param_details.keys.to_set != %i(name check).to_set
           raise Argon::Error.new("`parameters.#{param_name}.name` should be a Symbol") unless param_details[:name].is_a?(Symbol)
-          raise Argon::Error.new("`parameters.#{param_name}.has_default_value` should be true/false") unless [true, false].include?(param_details[:has_default_value])
           raise Argon::Error.new("`parameters.#{param_name}.check` should be a lambda that takes one arg") if !param_details[:check].is_a?(Proc) || !(param_details[:check].parameters.length == 1 && param_details[:check].parameters[0].length == 2 && param_details[:check].parameters[0][0] == :req && param_details[:check].parameters[0][1].is_a?(Symbol))
         end
       end
@@ -50,11 +52,13 @@ module Argon
 
       registered_edge_pairs = [].to_set
       edges_list.each_with_index do |edge_details, index|
-        from         = edge_details[:from]
-        to           = edge_details[:to]
-        action       = edge_details[:action]
-        do_action    = "#{action}!".to_sym
-        check_action = "can_#{action}?".to_sym
+        from                   = edge_details[:from]
+        to                     = edge_details[:to]
+        action                 = edge_details[:action]
+        do_action              = "#{action}!".to_sym
+        check_action           = "can_#{action}?".to_sym
+        action_parameters      = edge_details[:parameters]
+        action_parameter_names = (action_parameters.nil? || parameters.nil?) ? [] : parameters.values_at(*action_parameters).compact.map{|p| p[:name]}
 
         raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)") unless edge_details.keys.to_set.subset?([:from, :to, :action, :callbacks, :on_events, :parameters].to_set) && [:from, :to, :action, :callbacks].to_set.subset?(edge_details.keys.to_set)
         raise Argon::Error.new("`edges[#{index}].from` is not a valid state") unless states_map.keys.include?(from)
@@ -64,10 +68,10 @@ module Argon
         raise Argon::Error.new("`#{edge_details[:action]}` is an invalid action name. `#{self.name}##{check_action}` method already exists") if self.instance_methods.include?(check_action)
         raise Argon::Error.new("`edges[#{index}].callbacks` must be {on: true/false, after: true/false}") if !edge_details[:callbacks].is_a?(Hash) || edge_details[:callbacks].keys.to_set != [:after, :on].to_set || !edge_details[:callbacks].values.to_set.subset?([true, false].to_set)
         if edge_details[:callbacks][:on]
-          raise Argon::Error.new("`on_#{edge_details[:action]}()` not found") if !self.instance_methods.include?("on_#{edge_details[:action]}".to_sym) || self.instance_method("on_#{edge_details[:action]}".to_sym).parameters.to_set != [].to_set
+          raise Argon::Error.new("`on_#{edge_details[:action]}(#{ action_parameter_names.map{|p| "#{p}:"}.join(", ") })` not found") if !self.instance_methods.include?("on_#{edge_details[:action]}".to_sym) || self.instance_method("on_#{edge_details[:action]}".to_sym).parameters.to_set != action_parameter_names.map{|name| [:keyreq, name]}.to_set
         end
         if edge_details[:callbacks][:after]
-          raise Argon::Error.new("`after_#{edge_details[:action]}()` not found") if !self.instance_methods.include?("after_#{edge_details[:action]}".to_sym) || self.instance_method("after_#{edge_details[:action]}".to_sym).parameters.to_set != [].to_set
+          raise Argon::Error.new("`after_#{edge_details[:action]}(#{ action_parameter_names.map{|p| "#{p}:"}.join(",") })` not found") if !self.instance_methods.include?("after_#{edge_details[:action]}".to_sym) || self.instance_method("after_#{edge_details[:action]}".to_sym).parameters.to_set != action_parameter_names.map{|name| [:keyreq, name]}.to_set
         end
         raise Argon::Error.new("`#{edge_details[:on_events]}` (`edges[#{index}].on_events`) is not a valid list of events") if !edge_details[:on_events].nil? && !edge_details[:on_events].is_a?(Array)
         unless edge_details[:on_events].nil?
@@ -130,6 +134,7 @@ module Argon
         from               = edge_details[:from]
         to                 = edge_details[:to]
         action             = edge_details[:action]
+        action_parameters  = edge_details[:parameters] || []
         on_lock_callback   = "on_#{action}".to_sym if edge_details[:callbacks][:on] == true
         after_lock_callback = "after_#{action}".to_sym if edge_details[:callbacks][:after] == true
 
@@ -137,7 +142,20 @@ module Argon
           self.send(field) == from
         end
 
-        define_method("#{action}!".to_sym) do |&block|
+        define_method("#{action}!".to_sym) do |**args, &block|
+          required_keywords = !parameters.nil? ? parameters.values_at(*action_parameters).map{|p| p[:name]} : []
+          available_keywords = args.keys
+
+          raise ArgumentError.new("wrong number of arguments (given 1, expected 0)") if required_keywords.to_set.empty? && !available_keywords.to_set.empty?
+          raise ArgumentError.new("missing #{ pluralize("keyword", (required_keywords - available_keywords).length) }: #{ (required_keywords - available_keywords).join(", ") }") if !required_keywords.to_set.subset?(available_keywords.to_set)
+          raise ArgumentError.new("unknown #{ pluralize("keyword", (available_keywords - required_keywords).length) }: #{ (available_keywords - required_keywords).join(", ") }") if !available_keywords.to_set.subset?(required_keywords.to_set)
+
+          if !parameters.nil? && !action_parameters.empty?
+            parameters.select{ |k,v| action_parameters.include?(k) }.each_pair do |param_name, param_details|
+              raise Argon::InvalidParameterError.new("incorrect value for `#{ param_name }`") if !param_details[:check].call(args[:param_name])
+            end
+          end
+
           if self.send(field) != from
             on_failed_transition.call(from: self.send(field), to: to)
             raise Argon::InvalidTransitionError.new("Invalid state transition")
@@ -149,7 +167,11 @@ module Argon
               self.touch
 
               unless on_lock_callback.nil?
-                self.send(on_lock_callback)
+                if args.empty?
+                  self.send(on_lock_callback)
+                else
+                  self.send(on_lock_callback, args)
+                end
               end
 
               unless block.nil?
@@ -164,7 +186,11 @@ module Argon
           on_successful_transition.call(from: from, to: to)
 
           unless after_lock_callback.nil?
-            self.send(after_lock_callback)
+            if args.empty?
+              self.send(after_lock_callback)
+            else
+              self.send(after_lock_callback, args)
+            end
           end
         end
       end

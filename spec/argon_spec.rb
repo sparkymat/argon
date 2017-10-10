@@ -542,7 +542,7 @@ RSpec.describe Argon do
       }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
     end
 
-    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, check: lambda(object) }' do
       expect {
         class SampleClass
           include Argon
@@ -567,10 +567,10 @@ RSpec.describe Argon do
             on_failed_transition:     ->(from:, to:) {},
           }
         end
-      }.to raise_error(Argon::Error, "`parameters.foo_message` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object)}")
+      }.to raise_error(Argon::Error, "`parameters.foo_message` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, check: lambda(object)}")
     end
 
-    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, check: lambda(object) }' do
       expect {
         class SampleClass
           include Argon
@@ -587,10 +587,8 @@ RSpec.describe Argon do
             ],
             parameters: {
               foo_message: {
-                name:              nil,
-                has_default_value: 0,
-                default_value:     nil,
-                check:             nil,
+                name:  nil,
+                check: nil,
               },
             },
             on_successful_transition: ->(from:, to:) {},
@@ -600,7 +598,7 @@ RSpec.describe Argon do
       }.to raise_error(Argon::Error, "`parameters.foo_message.name` should be a Symbol")
     end
 
-    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, check: lambda(object) }' do
       expect {
         class SampleClass
           include Argon
@@ -617,40 +615,8 @@ RSpec.describe Argon do
             ],
             parameters: {
               foo_message: {
-                name:              :message,
-                has_default_value: 0,
-                default_value:     nil,
-                check:             nil,
-              },
-            },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
-          }
-        end
-      }.to raise_error(Argon::Error, "`parameters.foo_message.has_default_value` should be true/false")
-    end
-
-    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
-      expect {
-        class SampleClass
-          include Argon
-
-          state_machine state: {
-            states: {
-              abc: 1,
-              def: 2,
-            },
-            events: [
-            ],
-            edges: [
-              {from: :initial, to: :final, action: :foo, callbacks: {on: false, after: false}},
-            ],
-            parameters: {
-              foo_message: {
-                name:              :message,
-                has_default_value: true,
-                default_value:     nil,
-                check:             nil,
+                name:  :message,
+                check: nil,
               },
             },
             on_successful_transition: ->(from:, to:) {},
@@ -660,7 +626,7 @@ RSpec.describe Argon do
       }.to raise_error(Argon::Error, "`parameters.foo_message.check` should be a lambda that takes one arg")
     end
 
-    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, has_default_value: true/false, default_value: any, check: lambda(object) }' do
+    it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, check: lambda(object) }' do
       expect {
         class SampleClass
           include Argon
@@ -677,10 +643,8 @@ RSpec.describe Argon do
             ],
             parameters: {
               foo_message: {
-                name:              :message,
-                has_default_value: true,
-                default_value:     nil,
-                check:             ->() {},
+                name:  :message,
+                check: ->() {},
               },
             },
             on_successful_transition: ->(from:, to:) {},
@@ -707,10 +671,8 @@ RSpec.describe Argon do
             ],
             parameters: {
               foo_message: {
-                name:              :message,
-                has_default_value: true,
-                default_value:     nil,
-                check:             ->(object) {},
+                name:  :message,
+                check: ->(object) {},
               },
             },
             on_successful_transition: ->(from:, to:) {},
@@ -718,6 +680,71 @@ RSpec.describe Argon do
           }
         end
       }.to raise_error(Argon::Error, "`foo_bar` (`edges[0].parameters[0]`) is not a registered parameter")
+    end
+
+    it 'should raise error if callbacks don\'t accept the parameters' do
+      expect {
+        class SampleClass
+          include Argon
+
+          def on_foo
+          end
+
+          state_machine state: {
+            states: {
+              initial: 1,
+              final:   2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: true, after: false}, parameters: [:foo_message]},
+            ],
+            parameters: {
+              foo_message: {
+                name:  :message,
+                check: ->(object) {},
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`on_foo(message:)` not found")
+    end
+
+    it 'should raise error if callbacks don\'t accept the parameters' do
+      expect {
+        class SampleClass
+          include Argon
+
+          def on_foo(message:)
+          end
+
+          def after_foo
+          end
+
+          state_machine state: {
+            states: {
+              initial: 1,
+              final:   2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: true, after: true}, parameters: [:foo_message]},
+            ],
+            parameters: {
+              foo_message: {
+                name:  :message,
+                check: ->(object) {},
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`after_foo(message:)` not found")
     end
   end
 
@@ -1198,6 +1225,270 @@ RSpec.describe Argon do
 
       instance.update_column(:state, 1)
       instance.move!
+    end
+  end
+
+  context 'edge parameters' do
+    after do
+      Object.send(:remove_const, :SampleClass)
+    end
+
+    it 'should raise error if required params are not passed' do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Argon
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}, parameters: [:foo]},
+          ],
+          parameters: {
+            foo: {
+              name: :bar,
+              check: ->(object) { false },
+            },
+          },
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      instance = SampleClass.new
+      instance.update_column(:state, 1)
+      expect { instance.move! }.to raise_error(ArgumentError, "missing keyword: bar")
+    end
+
+    it 'should raise error if extra params are passed' do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Argon
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
+          ],
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      instance = SampleClass.new
+      instance.update_column(:state, 1)
+      expect { instance.move!(foo: 1) }.to raise_error(ArgumentError, "wrong number of arguments (given 1, expected 0)")
+    end
+
+    it 'should raise error if extra params are passed' do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Argon
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}, parameters: [:bar]},
+          ],
+          parameters: {
+            bar: {
+              name:  :bar,
+              check: ->(object) {},
+            }
+          },
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      instance = SampleClass.new
+      instance.update_column(:state, 1)
+      expect { instance.move!(foo: 1, bar: 2) }.to raise_error(ArgumentError, "unknown keyword: foo")
+    end
+
+    it 'should raise error if parameter doesn\'t pass check' do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Argon
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}, parameters: [:bar]},
+          ],
+          parameters: {
+            bar: {
+              name:  :bar,
+              check: ->(object) {},
+            }
+          },
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      instance = SampleClass.new
+      instance.update_column(:state, 1)
+      expect { instance.move!(bar: 2) }.to raise_error(Argon::InvalidParameterError, "incorrect value for `bar`")
+    end
+
+    it 'should call the callbacks with the right values' do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:abc, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:def, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Argon
+
+        def on_move(bar:)
+        end
+
+        def after_move(bar:)
+        end
+
+        state_machine state: {
+          states: {
+            abc: 1,
+            def: 2,
+          },
+          events: [
+          ],
+          edges: [
+            {from: :abc, to: :def, action: :move, callbacks: {on: true, after: true}, parameters: [:bar]},
+          ],
+          parameters: {
+            bar: {
+              name:  :bar,
+              check: ->(object) { true },
+            }
+          },
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      instance = SampleClass.new
+      instance.update_column(:state, 1)
+      expect(instance).to receive(:touch).at_least(:once)
+      expect(instance).to receive(:on_move).with(bar: 2)
+      expect(instance).to receive(:after_move).with(bar: 2)
+      instance.move!(bar: 2)
     end
   end
 end
