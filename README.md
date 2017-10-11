@@ -26,11 +26,11 @@ The `Maxim` module provides a `state_machine` class method which expects the fol
   class Report
     include Argon
 
-    def on_cancel(action:)
+    def on_cancel(action:, message:)
       # This is called from inside the lock, after the edge transitions, with the name of the action. If an exception is thrown here, the entire transition is rolled back
     end
 
-    def after_cancel(action:)
+    def after_cancel(action:, message:)
       # This is called after a successful transition, with the action which actually succeeded
     end
 
@@ -46,10 +46,16 @@ The `Maxim` module provides a `state_machine` class method which expects the fol
         :cancel,
       ],
       edges: [
-        { from: :draft,     to: :submitted, action: :submit,           callbacks: {on: false, after: false}                       },
-        { from: :draft,     to: :cancelled, action: :cancel_draft,     callbacks: {on: false, after: false}, on_events: [:cancel] },
-        { from: :submitted, to: :cancelled, action: :cancel_submitted, callbacks: {on: false, after: false}, on_events: [:cancel] },
+        { from: :draft,     to: :submitted, action: :submit,           callbacks: {on: false, after: false}                                                     },
+        { from: :draft,     to: :cancelled, action: :cancel_draft,     callbacks: {on: false, after: false}, on_events: [:cancel], parameters: [:message_param] },
+        { from: :submitted, to: :cancelled, action: :cancel_submitted, callbacks: {on: false, after: false}, on_events: [:cancel], parameters: [:message_param] },
       ],
+      parameters: {
+        message_param: {
+          name:   :message,
+          check:  ->(message) { !message.nil? },
+        }
+      },
       on_successful_transition: ->(from:, to:) { /* Do something here */ },
       on_failed_transition:     ->(from:, to:) { /* Do something else */ },
     }
