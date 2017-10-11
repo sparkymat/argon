@@ -784,6 +784,81 @@ RSpec.describe Argon do
         end
       }.to raise_error(Argon::Error, "`edges[0].parameters` lists multiple parameters with the same name")
     end
+
+    it 'should raise error if multiple actions with different parameters subscribe to the same event' do
+      expect {
+        class SampleClass
+          include Argon
+
+          def on_move(action:, message:)
+          end
+
+          def after_move(action:, message:)
+          end
+
+          state_machine state: {
+            states: {
+              initial: 1,
+              final:   2,
+            },
+            events: [
+              :move
+            ],
+            edges: [
+              {from: :initial, to: :final,   action: :foo, callbacks: {on: false, after: false}, on_events: [:move], parameters: [:foo_message]},
+              {from: :final,   to: :initial, action: :bar, callbacks: {on: false, after: false}, on_events: [:move], parameters: [:bar_message]},
+            ],
+            parameters: {
+              foo_message: {
+                name:  :message,
+                check: ->(object) {},
+              },
+              bar_message: {
+                name:  :message,
+                check: ->(object) {},
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "Event `move` is being used by edges (`foo`, `bar`) with mixed lists of parameters")
+    end
+
+    it 'should raise error if the event callbacks don\'t have the right parameters' do
+      expect {
+        class SampleClass
+          include Argon
+
+          def on_move(action:)
+          end
+
+          def after_move(action:)
+          end
+
+          state_machine state: {
+            states: {
+              initial: 1,
+              final:   2,
+            },
+            events: [
+              :move
+            ],
+            edges: [
+              {from: :initial, to: :final,   action: :foo, callbacks: {on: false, after: false}, on_events: [:move], parameters: [:foo_message]},
+            ],
+            parameters: {
+              foo_message: {
+                name:  :message,
+                check: ->(object) {},
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`on_move(action:, message:)` not found")
+    end
   end
 
   context 'emulates the enum functionality with symbols' do
@@ -1527,6 +1602,75 @@ RSpec.describe Argon do
       expect(instance).to receive(:on_move).with(bar: 2)
       expect(instance).to receive(:after_move).with(bar: 2)
       instance.move!(bar: 2)
+    end
+
+    it 'should call the event callbacks with right parameter values' do
+      class SampleClass
+        def initialize
+          @state = nil
+        end
+
+        def [](field)
+          @state
+        end
+
+        def update_column(field, value)
+          @state = value
+        end
+
+        def with_lock(&block)
+          block.call
+        end
+      end
+
+      expect(SampleClass).to receive(:scope).with(:initial, instance_of(Proc))
+      expect(SampleClass).to receive(:scope).with(:final, instance_of(Proc))
+
+      SampleClass.class_eval do
+        include Argon
+
+        def on_move(action:, message:)
+        end
+
+        def after_move(action:, message:)
+        end
+
+        state_machine state: {
+          states: {
+            initial: 1,
+            final:   2,
+          },
+          events: [
+            :move
+          ],
+          edges: [
+            {from: :initial,  to: :final,   action: :foo, callbacks: {on: false, after: false}, on_events: [:move], parameters: [:foo_message]},
+            {from: :final,    to: :initial, action: :bar, callbacks: {on: false, after: false}, on_events: [:move], parameters: [:foo_message]},
+          ],
+          parameters: {
+            foo_message: {
+              name:  :message,
+              check: ->(object) { true },
+            },
+          },
+          on_successful_transition: ->(from:, to:) {},
+          on_failed_transition:     ->(from:, to:) {},
+        }
+      end
+
+      instance = SampleClass.new
+      instance.update_column(:state, 1)
+
+      expect(instance).to receive(:touch).at_least(:once)
+      expect(instance).to receive(:on_move).with(action: :foo, message: 2)
+      expect(instance).to receive(:after_move).with(action: :foo, message: 2)
+
+      instance.move!(message: 2)
+
+      expect(instance).to receive(:on_move).with(action: :bar, message: 3)
+      expect(instance).to receive(:after_move).with(action: :bar, message: 3)
+
+      instance.move!(message: 3)
     end
   end
 end

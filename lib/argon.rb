@@ -36,8 +36,21 @@ module Argon
       raise Argon::Error.new("`events` should be an Array of Symbols") if !events_list.is_a?(Array) || (events_list.length > 0 && events_list.map(&:class).uniq != [Symbol])
       events_list.each do |event_name|
         raise Argon::Error.new("`#{event_name}` is not a valid event name. `#{self.name}##{event_name}` method already exists") if self.instance_methods.include?(event_name)
-        raise Argon::Error.new("`on_#{event_name}(action:)` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
-        raise Argon::Error.new("`after_#{event_name}(action:)` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
+
+        event_edges = edges_list.select{|e| !e[:on_events].nil? && e[:on_events].include?(event_name)}
+
+        if event_edges.empty?
+          raise Argon::Error.new("`on_#{event_name}(action:)` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
+          raise Argon::Error.new("`after_#{event_name}(action:)` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != [[:keyreq, :action]].to_set
+        else
+          raise Argon::Error.new("Event `#{event_name}` is being used by edges (#{ event_edges.map{|e| "`#{e[:action]}`"}.join(", ") }) with mixed lists of parameters") if event_edges.map{|e| (e[:parameters] || []).to_set}.uniq.length > 1
+          expected_parameters = %i(action)
+          if !event_edges[0][:parameters].nil?
+            expected_parameters += parameters.values_at(*event_edges[0][:parameters]).map{|p| p[:name]}
+          end
+          raise Argon::Error.new("`on_#{event_name}(#{ expected_parameters.map{|p| "#{p}:"}.join(", ") })` not found") if !self.instance_methods.include?("on_#{event_name}".to_sym) || self.instance_method("on_#{event_name}".to_sym).parameters.to_set != expected_parameters.map{|name| [:keyreq, name]}.to_set
+          raise Argon::Error.new("`after_#{event_name}(#{ expected_parameters.map{|p| "#{p}:"}.join(", ") })` not found") if !self.instance_methods.include?("after_#{event_name}".to_sym) || self.instance_method("after_#{event_name}".to_sym).parameters.to_set != expected_parameters.map{|name| [:keyreq, name]}.to_set
+        end
       end
       raise Argon::Error.new("`parameters` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, check: lambda(object)}") if !parameters.nil? && !parameters.is_a?(Hash) && parameters.keys.map(&:class).to_set != [Symbol].to_set
       if !parameters.nil?
@@ -96,6 +109,9 @@ module Argon
 
       raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
       raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set
+
+      events_list.each do |event_name|
+      end
 
       state_machines = {}
       begin
@@ -199,17 +215,23 @@ module Argon
       end
 
       events_list.each do |event_name|
-        define_method("#{event_name}!".to_sym) do
+        define_method("#{event_name}!".to_sym) do |**args|
           matching_edges = edges_list.select{ |edge| !edge[:on_events].nil? && edge[:on_events].to_set.include?(event_name) }
 
           matching_edges.each do |edge|
             action = edge[:action]
 
             if self.send("can_#{ action }?")
-              self.send("#{ action }!") do
-                self.send("on_#{ event_name }", action: action)
+              if args.empty?
+                self.send("#{ action }!") do
+                  self.send("on_#{ event_name }", {action: action})
+                end
+              else
+                self.send("#{ action }!", args) do
+                  self.send("on_#{ event_name }", {action: action}.merge(args))
+                end
               end
-              self.send("after_#{ event_name }", action: action)
+              self.send("after_#{ event_name }", {action: action}.merge(args))
               return
             end
           end
