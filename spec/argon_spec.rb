@@ -746,6 +746,44 @@ RSpec.describe Argon do
         end
       }.to raise_error(Argon::Error, "`after_foo(message:)` not found")
     end
+
+    it 'should raise error if an action tries to use multiple parameters with the same name' do
+      expect {
+        class SampleClass
+          include Argon
+
+          def on_foo(message:)
+          end
+
+          def after_foo(message:)
+          end
+
+          state_machine state: {
+            states: {
+              initial: 1,
+              final:   2,
+            },
+            events: [
+            ],
+            edges: [
+              {from: :initial, to: :final, action: :foo, callbacks: {on: true, after: true}, parameters: [:foo_message, :bar_message]},
+            ],
+            parameters: {
+              foo_message: {
+                name:  :message,
+                check: ->(object) {},
+              },
+              bar_message: {
+                name:  :message,
+                check: ->(object) {},
+              },
+            },
+            on_successful_transition: ->(from:, to:) {},
+            on_failed_transition:     ->(from:, to:) {},
+          }
+        end
+      }.to raise_error(Argon::Error, "`edges[0].parameters` lists multiple parameters with the same name")
+    end
   end
 
   context 'emulates the enum functionality with symbols' do

@@ -79,6 +79,9 @@ module Argon
             raise Argon::Error.new("`#{ event_name }` (`edges[#{index}].on_events[#{event_index}]`) is not a registered event") unless events_list.include?(event_name)
           end
         end
+
+        raise Argon::Error.new("`edges[#{index}].parameters` lists multiple parameters with the same name") if action_parameter_names.length != action_parameter_names.uniq.length
+
         unless edge_details[:parameters].nil?
           edge_details[:parameters].each_with_index do |param_name, param_index|
             raise Argon::Error.new("`#{ param_name }` (`edges[#{index}].parameters[#{param_index}]`) is not a registered parameter") unless parameters.keys.include?(param_name)
