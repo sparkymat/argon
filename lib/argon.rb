@@ -4,12 +4,14 @@ require 'argon/invalid_transition_error'
 require 'argon/invalid_parameter_error'
 require 'active_support/concern'
 require 'active_support/inflector'
+require 'symbolic_enum'
 require 'pry-byebug'
 
 module Argon
   extend ActiveSupport::Concern
   extend ActiveSupport::Inflector
   include ActiveSupport::Inflector
+  include SymbolicEnum
 
   module ClassMethods
     def state_machine(mapping)
@@ -130,24 +132,7 @@ module Argon
         self.class_variable_get(:@@state_machines || {})
       end
 
-      # Replicating enum functionality (partially)
-      define_singleton_method("#{ field.to_s.pluralize }") do
-        states_map
-      end
-
-      reverse_states_map = states_map.map{|v| [v[1],v[0]]}.to_h
-
-      define_method(field) do
-        reverse_states_map[self[field]]
-      end
-
-      states_map.each_pair do |state_name, state_value|
-        scope state_name, -> { where(field => state_value) }
-
-        define_method("#{ state_name }?".to_sym) do
-          self[field] == state_value
-        end
-      end
+      symbolic_enum field => states_map, disable_setters: true
 
       edges_list.each do |edge_details|
         from               = edge_details[:from]
