@@ -473,10 +473,10 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:)`")
+      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(record:, from:, to:)`")
     end
 
-    it 'should only allow on_successful_transition as a lambda(from:, to:)' do
+    it 'should only allow on_successful_transition as a lambda(record:, from:, to:)' do
       expect {
         class SampleClass
           include Argon
@@ -495,7 +495,7 @@ RSpec.describe Argon do
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(from:, to:)`")
+      }.to raise_error(Argon::Error, "`on_successful_transition` must be a lambda of signature `(record:, from:, to:)`")
     end
 
     it 'should only allow on_failed_transition as a lambda' do
@@ -513,11 +513,11 @@ RSpec.describe Argon do
             edges: [
               {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}},
             ],
-            on_successful_transition: ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
             on_failed_transition:     5,
           }
         end
-      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
+      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(record:, from:, to:)`")
     end
 
     it 'should only allow on_failed_transition as a lambda(from:, to:)' do
@@ -535,11 +535,11 @@ RSpec.describe Argon do
             edges: [
               {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}},
             ],
-            on_successful_transition: ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
             on_failed_transition:     ->(test:) {},
           }
         end
-      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(from:, to:)`")
+      }.to raise_error(Argon::Error, "`on_failed_transition` must be a lambda of signature `(record:, from:, to:)`")
     end
 
     it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, check: lambda(object) }' do
@@ -563,8 +563,8 @@ RSpec.describe Argon do
                 bar: 0,
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`parameters.foo_message` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, check: lambda(object)}")
@@ -591,8 +591,8 @@ RSpec.describe Argon do
                 check: nil,
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`parameters.foo_message.name` should be a Symbol")
@@ -619,8 +619,8 @@ RSpec.describe Argon do
                 check: nil,
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`parameters.foo_message.check` should be a lambda that takes one arg")
@@ -647,8 +647,8 @@ RSpec.describe Argon do
                 check: ->() {},
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`parameters.foo_message.check` should be a lambda that takes one arg")
@@ -675,8 +675,8 @@ RSpec.describe Argon do
                 check: ->(object) {},
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`foo_bar` (`edges[0].parameters[0]`) is not a registered parameter")
@@ -706,8 +706,8 @@ RSpec.describe Argon do
                 check: ->(object) {},
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`on_foo(message:)` not found")
@@ -740,8 +740,8 @@ RSpec.describe Argon do
                 check: ->(object) {},
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`after_foo(message:)` not found")
@@ -778,8 +778,8 @@ RSpec.describe Argon do
                 check: ->(object) {},
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`edges[0].parameters` lists multiple parameters with the same name")
@@ -818,8 +818,8 @@ RSpec.describe Argon do
                 check: ->(object) {},
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "Event `move` is being used by edges (`foo`, `bar`) with mixed lists of parameters")
@@ -853,8 +853,8 @@ RSpec.describe Argon do
                 check: ->(object) {},
               },
             },
-            on_successful_transition: ->(from:, to:) {},
-            on_failed_transition:     ->(from:, to:) {},
+            on_successful_transition: ->(record:, from:, to:) {},
+            on_failed_transition:     ->(record:, from:, to:) {},
           }
         end
       }.to raise_error(Argon::Error, "`on_move(action:, message:)` not found")
@@ -885,8 +885,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :ghi, callbacks: {on: false, after: false}},
           ],
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -935,8 +935,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
           ],
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -1019,8 +1019,8 @@ RSpec.describe Argon do
             {from: :abc, to: :ghi, action: :move,      callbacks: {on: false, after: false},  on_events: [:foo, :bar]},
             {from: :def, to: :ghi, action: :dont_move, callbacks: {on: false, after: false},  on_events: [:foo]},
           ],
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -1111,8 +1111,8 @@ RSpec.describe Argon do
               {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
               {from: :abc, to: :def, action: :walk, callbacks: {on: false, after: false}},
             ],
-            on_successful_transition: ->(from:, to:) { },
-            on_failed_transition:     ->(from:, to:) { },
+            on_successful_transition: ->(record:, from:, to:) { },
+            on_failed_transition:     ->(record:, from:, to:) { },
           }
         end
       }.to raise_error(Argon::Error, "`edges[1]` is a duplicate edge")
@@ -1172,8 +1172,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
           ],
-          on_successful_transition: ->(from:, to:) { success.call(from: from, to: to) },
-          on_failed_transition:     ->(from:, to:) { failure.call(from: from, to: to) },
+          on_successful_transition: ->(record:, from:, to:) { success.call(from: from, to: to) },
+          on_failed_transition:     ->(record:, from:, to:) { failure.call(from: from, to: to) },
         }
       end
 
@@ -1245,8 +1245,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
           ],
-          on_successful_transition: ->(from:, to:) { success.call(from: from, to: to) },
-          on_failed_transition:     ->(from:, to:) { failure.call(from: from, to: to) },
+          on_successful_transition: ->(record:, from:, to:) { success.call(from: from, to: to) },
+          on_failed_transition:     ->(record:, from:, to:) { failure.call(from: from, to: to) },
         }
       end
 
@@ -1318,8 +1318,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, on_events: [:foo], callbacks: {on: true, after: true}},
           ],
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -1387,8 +1387,8 @@ RSpec.describe Argon do
               check: ->(object) { false },
             },
           },
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -1432,8 +1432,8 @@ RSpec.describe Argon do
           edges: [
             {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
           ],
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -1483,8 +1483,8 @@ RSpec.describe Argon do
               check: ->(object) {},
             }
           },
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -1534,8 +1534,8 @@ RSpec.describe Argon do
               check: ->(object) {},
             }
           },
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -1591,8 +1591,8 @@ RSpec.describe Argon do
               check: ->(object) { true },
             }
           },
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 
@@ -1653,8 +1653,8 @@ RSpec.describe Argon do
               check: ->(object) { true },
             },
           },
-          on_successful_transition: ->(from:, to:) {},
-          on_failed_transition:     ->(from:, to:) {},
+          on_successful_transition: ->(record:, from:, to:) {},
+          on_failed_transition:     ->(record:, from:, to:) {},
         }
       end
 

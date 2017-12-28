@@ -106,11 +106,11 @@ module Argon
         registered_edge_pairs << [from, to]
       end
 
-      raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)
-      raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(from:, to:)`") if on_successful_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set
+      raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(record:, from:, to:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)
+      raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(record:, from:, to:)`") if on_successful_transition.parameters.to_set != [[:keyreq, :record],[:keyreq, :from],[:keyreq, :to]].to_set
 
-      raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
-      raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(from:, to:)`") if on_failed_transition.parameters.to_set != [[:keyreq, :from],[:keyreq, :to]].to_set
+      raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(record:, from:, to:)`") if !on_failed_transition.nil? && !on_failed_transition.is_a?(Proc)
+      raise Argon::Error.new("`on_failed_transition` must be a lambda of signature `(record:, from:, to:)`") if on_failed_transition.parameters.to_set != [[:keyreq, :record],[:keyreq, :from],[:keyreq, :to]].to_set
 
       events_list.each do |event_name|
       end
@@ -161,7 +161,7 @@ module Argon
           end
 
           if self.send(field) != from
-            on_failed_transition.call(from: self.send(field), to: to)
+            on_failed_transition.call(record: self, from: self.send(field), to: to)
             raise Argon::InvalidTransitionError.new("Invalid state transition")
           end
 
@@ -183,11 +183,11 @@ module Argon
               end
             end
           rescue => e
-            on_failed_transition.call(from: self.send(field), to: to)
+            on_failed_transition.call(record: self, from: self.send(field), to: to)
             raise e
           end
 
-          on_successful_transition.call(from: from, to: to)
+          on_successful_transition.call(record: self, from: from, to: to)
 
           unless after_lock_callback.nil?
             if args.empty?
