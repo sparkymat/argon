@@ -1065,60 +1065,6 @@ RSpec.describe Argon do
     end
   end
 
-  context 'state machine checks' do
-    after do
-      Object.send(:remove_const, :SampleClass)
-    end
-
-    it 'should raise error on duplicate edges' do
-      class SampleClass
-        def initialize
-          @state = nil
-        end
-
-        def [](field)
-          @state
-        end
-
-        def update_column(field, value)
-          @state = value
-        end
-
-        def with_lock(&block)
-          block.call
-        end
-      end
-
-      expect {
-        SampleClass.class_eval do
-          include Argon
-
-          def on_foo(action:)
-          end
-
-          def after_foo(action:)
-          end
-
-          state_machine state: {
-            states: {
-              abc: 1,
-              def: 2,
-            },
-            events: [
-              :foo,
-            ],
-            edges: [
-              {from: :abc, to: :def, action: :move, callbacks: {on: false, after: false}},
-              {from: :abc, to: :def, action: :walk, callbacks: {on: false, after: false}},
-            ],
-            on_successful_transition: ->(record:, from:, to:) { },
-            on_failed_transition:     ->(record:, from:, to:) { },
-          }
-        end
-      }.to raise_error(Argon::Error, "`edges[1]` is a duplicate edge")
-    end
-  end
-
   context 'callbacks' do
     after do
       Object.send(:remove_const, :SampleClass)

@@ -65,7 +65,6 @@ module Argon
 
       raise Argon::Error.new("`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)") if !edges_list.is_a?(Array) || edges_list.map(&:class).to_set != [Hash].to_set
 
-      registered_edge_pairs = [].to_set
       edges_list.each_with_index do |edge_details, index|
         from                   = edge_details[:from]
         to                     = edge_details[:to]
@@ -102,8 +101,6 @@ module Argon
             raise Argon::Error.new("`#{ param_name }` (`edges[#{index}].parameters[#{param_index}]`) is not a registered parameter") unless parameters.keys.include?(param_name)
           end
         end
-        raise Argon::Error.new("`edges[#{index}]` is a duplicate edge") if registered_edge_pairs.include?([from,to])
-        registered_edge_pairs << [from, to]
       end
 
       raise Argon::Error.new("`on_successful_transition` must be a lambda of signature `(record:, from:, to:)`") if !on_successful_transition.nil? && !on_successful_transition.is_a?(Proc)
