@@ -20,7 +20,7 @@ Or install it yourself as:
 
 ## Usage
 
-The `Maxim` module provides a `state_machine` class method which expects the following args (as demonstrated by the example below).
+The `Argon` module provides a `state_machine` class method which expects the following args (as demonstrated by the example below).
 
 ```ruby
   class Report
