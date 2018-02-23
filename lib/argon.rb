@@ -153,7 +153,7 @@ module Argon
 
           if !parameters.nil? && !action_parameters.empty?
             parameters.select{ |k,v| action_parameters.include?(k) }.each_pair do |param_name, param_details|
-              raise Argon::InvalidParameterError.new("incorrect value for `#{ param_name }`") if !param_details[:check].call(args[:param_name])
+              raise Argon::InvalidParameterError.new("incorrect value for `#{ param_details[:name] }`") if !param_details[:check].call(args[param_details[:name]])
             end
           end
 
