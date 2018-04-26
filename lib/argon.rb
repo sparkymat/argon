@@ -164,6 +164,10 @@ module Argon
 
           begin
             self.with_lock do
+              if self.send(field) != from
+                raise Argon::InvalidTransitionError.new("Invalid state transition")
+              end
+
               self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
               self.touch
 
