@@ -163,13 +163,13 @@ module Argon
             if on_failed_transition
               self.on_failed_transition(field: field, action: action, from: from, to: to)
             end
-            raise Argon::InvalidTransitionError.new("Invalid state transition")
+            raise Argon::InvalidTransitionError.new("Invalid state transition. #{ self.class.name }##{ self.send(self.class.primary_key.to_sym) } cannot perform '#{action}' on #{field}='#{from}'")
           end
 
           begin
             self.with_lock do
               if self.send(field) != from
-                raise Argon::InvalidTransitionError.new("Invalid state transition")
+                raise Argon::InvalidTransitionError.new("Invalid state transition. #{ self.class.name }##{ self.send(self.class.primary_key.to_sym) } cannot perform '#{action}' on #{field}='#{from}'")
               end
 
               self.update_column(field, self.class.send("#{ field.to_s.pluralize }").map{|v| [v[0],v[1]]}.to_h[to])
@@ -230,7 +230,7 @@ module Argon
             end
           end
 
-          raise Argon::InvalidTransitionError.new("No valid transitions")
+          raise Argon::InvalidTransitionError.new("No valid transitions for #{ self.class.name }##{ self.send(self.class.primary_key.to_sym) }##{ field }")
         end
       end
     end

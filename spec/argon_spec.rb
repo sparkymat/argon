@@ -908,6 +908,9 @@ RSpec.describe Argon do
   context 'edge generation' do
     before do
       class SampleClass
+        def self.primary_key;'id';end
+        def id;1;end
+
         def initialize
           @state = nil
         end
@@ -975,6 +978,9 @@ RSpec.describe Argon do
   context 'event generation' do
     before do
       class SampleClass
+        def self.primary_key;'id';end
+        def id;1;end
+
         def initialize
           @state = nil
         end
@@ -1057,17 +1063,17 @@ RSpec.describe Argon do
 
     it 'should throw exception if generated event method can\'t find a valid edge' do
       @instance.update_column(:state, 2)
-      expect { @instance.bar! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions")
+      expect { @instance.bar! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions for SampleClass#1#state")
     end
 
     it 'should throw exception if generated event method has no edges' do
       @instance.update_column(:state, 3)
-      expect { @instance.foo! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions")
+      expect { @instance.foo! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions for SampleClass#1#state")
     end
 
     it 'should throw exception if generated event method has no edges' do
       @instance.update_column(:state, 3)
-      expect { @instance.bar! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions")
+      expect { @instance.bar! }.to raise_error(Argon::InvalidTransitionError, "No valid transitions for SampleClass#1#state")
     end
   end
 
@@ -1079,6 +1085,9 @@ RSpec.describe Argon do
     it 'should receive callbacks' do
 
       class SampleClass
+        def self.primary_key;'id';end
+        def id;1;end
+
         def initialize
           @state = nil
         end
@@ -1135,7 +1144,7 @@ RSpec.describe Argon do
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
 
-      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition")
+      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition. SampleClass#1 cannot perform 'move' on state='abc'")
     end
   end
 
@@ -1147,6 +1156,9 @@ RSpec.describe Argon do
     it 'should receive callbacks' do
 
       class SampleClass
+        def self.primary_key;'id';end
+        def id;1;end
+
         def initialize
           @state = nil
         end
@@ -1203,7 +1215,7 @@ RSpec.describe Argon do
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
 
-      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition")
+      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition. SampleClass#1 cannot perform 'move' on state='abc'")
     end
   end
 
@@ -1214,6 +1226,9 @@ RSpec.describe Argon do
 
     it 'should receive callbacks' do
       class SampleClass
+        def self.primary_key;'id';end
+        def id;1;end
+
         def initialize
           @state = nil
         end
@@ -1290,6 +1305,9 @@ RSpec.describe Argon do
 
     it 'should raise error if required params are not passed' do
       class SampleClass
+        def self.primary_key;'id';end
+        def id;1;end
+
         def initialize
           @state = nil
         end
@@ -1341,6 +1359,9 @@ RSpec.describe Argon do
 
     it 'should raise error if extra params are passed' do
       class SampleClass
+        def self.primary_key;'id';end
+        def id;1;end
+
         def initialize
           @state = nil
         end
@@ -1386,6 +1407,9 @@ RSpec.describe Argon do
 
     it 'should raise error if extra params are passed' do
       class SampleClass
+        def self.primary_key;'id';end
+        def id;1;end
+
         def initialize
           @state = nil
         end
