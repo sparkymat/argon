@@ -1144,7 +1144,7 @@ RSpec.describe Argon do
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
 
-      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition. SampleClass#1 cannot perform 'move' on state='abc'")
+      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition. SampleClass#1 cannot perform 'move' on state='def'")
     end
   end
 
@@ -1215,7 +1215,7 @@ RSpec.describe Argon do
       instance.update_column(:state, 2)
       expect(instance.state).to eq :def
 
-      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition. SampleClass#1 cannot perform 'move' on state='abc'")
+      expect { instance.move! }.to raise_error(Argon::InvalidTransitionError, "Invalid state transition. SampleClass#1 cannot perform 'move' on state='def'")
     end
   end
 
