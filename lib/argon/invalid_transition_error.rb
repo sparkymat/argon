@@ -1,1 +1,3 @@
-class Argon::InvalidTransitionError < StandardError;end
+# frozen_string_literal: true
+
+class Argon::InvalidTransitionError < StandardError; end
