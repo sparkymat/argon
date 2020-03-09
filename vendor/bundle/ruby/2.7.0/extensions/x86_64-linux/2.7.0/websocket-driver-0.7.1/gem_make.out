@@ -1,0 +1,15 @@
+current directory: /home/ajith/workspace/argon/vendor/bundle/ruby/2.7.0/gems/websocket-driver-0.7.1/ext/websocket-driver
+/home/ajith/usr/lib/ruby-2.7.0/bin/ruby -I /home/ajith/usr/lib/ruby-2.7.0/lib/ruby/2.7.0 -r ./siteconf20200309-3860699-1558k20.rb extconf.rb
+creating Makefile
+
+current directory: /home/ajith/workspace/argon/vendor/bundle/ruby/2.7.0/gems/websocket-driver-0.7.1/ext/websocket-driver
+make "DESTDIR=" clean
+
+current directory: /home/ajith/workspace/argon/vendor/bundle/ruby/2.7.0/gems/websocket-driver-0.7.1/ext/websocket-driver
+make "DESTDIR="
+compiling websocket_mask.c
+linking shared-object websocket_mask.so
+
+current directory: /home/ajith/workspace/argon/vendor/bundle/ruby/2.7.0/gems/websocket-driver-0.7.1/ext/websocket-driver
+make "DESTDIR=" install
+/usr/bin/install -c -m 0755 websocket_mask.so ./.gem.20200309-3860699-7p9cfz
