@@ -45,10 +45,11 @@ RSpec.describe Argon do
           include Argon
           state_machine state: {
             foo: 1,
-            bar: 2,
+            bar: 2
           }
         end
-      }.to raise_error(Argon::Error, 'state_machine() should have (only) the following mappings: states, events, edges, parameters (optional), on_successful_transition, on_failed_transition')
+      }.to raise_error(Argon::Error,
+                       'state_machine() should have (only) the following mappings: states, events, edges, parameters (optional), on_successful_transition, on_failed_transition')
     end
 
     it 'should only allow Hash for states' do
@@ -58,12 +59,13 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               foo: 1,
-              bar: 2,
+              bar: 2
             },
-            bar: 2,
+            bar: 2
           }
         end
-      }.to raise_error(Argon::Error, 'state_machine() should have (only) the following mappings: states, events, edges, parameters (optional), on_successful_transition, on_failed_transition')
+      }.to raise_error(Argon::Error,
+                       'state_machine() should have (only) the following mappings: states, events, edges, parameters (optional), on_successful_transition, on_failed_transition')
     end
 
     it 'should not allow empty states definitions' do
@@ -75,7 +77,7 @@ RSpec.describe Argon do
             events: 2,
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`states` does not specify any states')
@@ -88,12 +90,12 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               foo: 'hello',
-              bar: 4.7,
+              bar: 4.7
             },
             events: 2,
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`states` must be a mapping of Symbols to unique Integers')
@@ -106,12 +108,12 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               1 => 1,
-              nil => 2,
+              nil => 2
             },
             events: 2,
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`states` must be a mapping of Symbols to unique Integers')
@@ -124,12 +126,12 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               foo: 1,
-              bar: 1,
+              bar: 1
             },
             events: 2,
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`states` must be a mapping of Symbols to unique Integers')
@@ -146,12 +148,12 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               foo: 1,
-              bar: 2,
+              bar: 2
             },
             events: 2,
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`foo` is an invalid state name. `SampleClass.foo` method already exists')
@@ -168,12 +170,12 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               foo: 1,
-              bar: 2,
+              bar: 2
             },
             events: 2,
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`foo` is an invalid state name. `SampleClass#foo?` method already exists')
@@ -187,12 +189,12 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               foo: 1,
-              bar: 2,
+              bar: 2
             },
             events: 2,
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`events` should be an Array of Symbols')
@@ -209,7 +211,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [
               :foo,
@@ -217,7 +219,7 @@ RSpec.describe Argon do
             ],
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`foo` is not a valid event name. `SampleClass#foo` method already exists')
@@ -231,15 +233,16 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: 3,
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
-      }.to raise_error(Argon::Error, '`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)')
+      }.to raise_error(Argon::Error,
+                       '`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)')
     end
 
     it 'should only allow edges with the right keys' do
@@ -250,7 +253,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
@@ -258,10 +261,11 @@ RSpec.describe Argon do
               { from: 1, to: 2, action: 3, foo: 4 },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
-      }.to raise_error(Argon::Error, '`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)')
+      }.to raise_error(Argon::Error,
+                       '`edges` should be an Array of Hashes, with keys: from, to, action, callbacks{on: true/false, after: true/false}, on_events (optional), parameters (optional)')
     end
 
     it 'should only allow edges from valid states' do
@@ -272,14 +276,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: 1, to: 2, action: 3, callbacks: 4 },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`edges[0].from` is not a valid state')
@@ -293,14 +297,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: 2, action: 3, callbacks: 4 },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`edges[0].to` is not a valid state')
@@ -314,14 +318,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: 3, callbacks: 4 },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`edges[0].action` is not a Symbol')
@@ -338,14 +342,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: :foo, callbacks: 4 },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`foo` is an invalid action name. `SampleClass#foo!` method already exists')
@@ -362,14 +366,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: :foo, callbacks: 4 },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`foo` is an invalid action name. `SampleClass#can_foo?` method already exists')
@@ -383,14 +387,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: :ghi, callbacks: 22 },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`edges[0].callbacks` must be {on: true/false, after: true/false}')
@@ -404,14 +408,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: :ghi, callbacks: { on: false, after: false }, on_events: :bar },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`bar` (`edges[0].on_events`) is not a valid list of events')
@@ -431,7 +435,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [
               :foo,
@@ -440,7 +444,7 @@ RSpec.describe Argon do
               { from: :abc, to: :def, action: :ghi, callbacks: { on: false, after: false }, on_events: [:bar] },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`bar` (`edges[0].on_events[0]`) is not a registered event')
@@ -454,14 +458,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: :ghi, callbacks: { on: false, after: false } },
             ],
             on_successful_transition: 4,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`on_successful_transition` must be a boolean')
@@ -475,14 +479,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: :ghi, callbacks: { on: false, after: false } },
             ],
             on_successful_transition: true,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`on_successful_transition` must be a method of signature `(field:, action:, from:, to:)`')
@@ -499,14 +503,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: :ghi, callbacks: { on: false, after: false } },
             ],
             on_successful_transition: true,
-            on_failed_transition: 5,
+            on_failed_transition: 5
           }
         end
       }.to raise_error(Argon::Error, '`on_failed_transition` must be a boolean')
@@ -523,14 +527,14 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
               { from: :abc, to: :def, action: :ghi, callbacks: { on: false, after: false } },
             ],
             on_successful_transition: true,
-            on_failed_transition: true,
+            on_failed_transition: true
           }
         end
       }.to raise_error(Argon::Error, '`on_failed_transition` must be a method of signature `(field:, action:, from:, to:)`')
@@ -544,7 +548,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               initial: 1,
-              final: 2,
+              final: 2
             },
             events: [],
             edges: [
@@ -553,14 +557,15 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 foo: nil,
-                bar: 0,
-              },
+                bar: 0
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
-      }.to raise_error(Argon::Error, '`parameters.foo_message` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, check: lambda(object)}')
+      }.to raise_error(Argon::Error,
+                       '`parameters.foo_message` should be a Hash with keys as the parameter identifier, with value as a Hash as {name: Symbol, check: lambda(object)}')
     end
 
     it 'should only allow `parameters` as a Hash of param_name => { name: Symbol, check: lambda(object) }' do
@@ -571,7 +576,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
@@ -580,11 +585,11 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: nil,
-                check: nil,
-              },
+                check: nil
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, '`parameters.foo_message.name` should be a Symbol')
@@ -598,7 +603,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
@@ -607,11 +612,11 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: :message,
-                check: nil,
-              },
+                check: nil
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, '`parameters.foo_message.check` should be a lambda that takes one arg')
@@ -625,7 +630,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               abc: 1,
-              def: 2,
+              def: 2
             },
             events: [],
             edges: [
@@ -634,11 +639,11 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: :message,
-                check: ->() {},
-              },
+                check: ->() {}
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, '`parameters.foo_message.check` should be a lambda that takes one arg')
@@ -652,7 +657,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               initial: 1,
-              final: 2,
+              final: 2
             },
             events: [],
             edges: [
@@ -661,11 +666,11 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: :message,
-                check: ->(object) {},
-              },
+                check: ->(object) {}
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, '`foo_bar` (`edges[0].parameters[0]`) is not a registered parameter')
@@ -682,7 +687,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               initial: 1,
-              final: 2,
+              final: 2
             },
             events: [],
             edges: [
@@ -691,11 +696,11 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: :message,
-                check: ->(object) {},
-              },
+                check: ->(object) {}
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, '`on_foo(message:)` not found')
@@ -715,7 +720,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               initial: 1,
-              final: 2,
+              final: 2
             },
             events: [],
             edges: [
@@ -724,11 +729,11 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: :message,
-                check: ->(object) {},
-              },
+                check: ->(object) {}
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, '`after_foo(message:)` not found')
@@ -748,7 +753,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               initial: 1,
-              final: 2,
+              final: 2
             },
             events: [],
             edges: [
@@ -757,15 +762,15 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: :message,
-                check: ->(object) {},
+                check: ->(object) {}
               },
               bar_message: {
                 name: :message,
-                check: ->(object) {},
-              },
+                check: ->(object) {}
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, '`edges[0].parameters` lists multiple parameters with the same name')
@@ -785,7 +790,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               initial: 1,
-              final: 2,
+              final: 2
             },
             events: [
               :move
@@ -797,15 +802,15 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: :message,
-                check: ->(object) {},
+                check: ->(object) {}
               },
               bar_message: {
                 name: :message,
-                check: ->(object) {},
-              },
+                check: ->(object) {}
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, 'Event `move` is being used by edges (`foo`, `bar`) with mixed lists of parameters')
@@ -825,7 +830,7 @@ RSpec.describe Argon do
           state_machine state: {
             states: {
               initial: 1,
-              final: 2,
+              final: 2
             },
             events: [
               :move
@@ -836,11 +841,11 @@ RSpec.describe Argon do
             parameters: {
               foo_message: {
                 name: :message,
-                check: ->(object) {},
-              },
+                check: ->(object) {}
+              }
             },
             on_successful_transition: false,
-            on_failed_transition: false,
+            on_failed_transition: false
           }
         end
       }.to raise_error(Argon::Error, '`on_move(action:, message:)` not found')
@@ -864,14 +869,14 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [],
           edges: [
             { from: :abc, to: :def, action: :ghi, callbacks: { on: false, after: false } },
           ],
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -917,14 +922,14 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [],
           edges: [
             { from: :abc, to: :def, action: :move, callbacks: { on: false, after: false } },
           ],
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1001,7 +1006,7 @@ RSpec.describe Argon do
           states: {
             abc: 1,
             def: 2,
-            ghi: 3,
+            ghi: 3
           },
           events: [
             :foo,
@@ -1012,7 +1017,7 @@ RSpec.describe Argon do
             { from: :def, to: :ghi, action: :dont_move, callbacks: { on: false, after: false },  on_events: [:foo] },
           ],
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1100,7 +1105,7 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [
             :foo,
@@ -1109,7 +1114,7 @@ RSpec.describe Argon do
             { from: :abc, to: :def, action: :move, callbacks: { on: false, after: false } },
           ],
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1171,7 +1176,7 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [
             :foo,
@@ -1180,7 +1185,7 @@ RSpec.describe Argon do
             { from: :abc, to: :def, action: :move, callbacks: { on: false, after: false } },
           ],
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1248,7 +1253,7 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [
             :foo,
@@ -1257,7 +1262,7 @@ RSpec.describe Argon do
             { from: :abc, to: :def, action: :move, on_events: [:foo], callbacks: { on: true, after: true } },
           ],
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1316,7 +1321,7 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [],
           edges: [
@@ -1325,11 +1330,11 @@ RSpec.describe Argon do
           parameters: {
             foo: {
               name: :bar,
-              check: ->(object) { false },
-            },
+              check: ->(object) { false }
+            }
           },
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1370,14 +1375,14 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [],
           edges: [
             { from: :abc, to: :def, action: :move, callbacks: { on: false, after: false } },
           ],
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1418,7 +1423,7 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [],
           edges: [
@@ -1427,11 +1432,11 @@ RSpec.describe Argon do
           parameters: {
             bar: {
               name: :bar,
-              check: ->(object) {},
+              check: ->(object) {}
             }
           },
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1468,7 +1473,7 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [],
           edges: [
@@ -1477,11 +1482,11 @@ RSpec.describe Argon do
           parameters: {
             bar: {
               name: :bar,
-              check: ->(object) {},
+              check: ->(object) {}
             }
           },
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1524,7 +1529,7 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             abc: 1,
-            def: 2,
+            def: 2
           },
           events: [],
           edges: [
@@ -1533,11 +1538,11 @@ RSpec.describe Argon do
           parameters: {
             bar: {
               name: :bar,
-              check: ->(object) { true },
+              check: ->(object) { true }
             }
           },
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 
@@ -1583,7 +1588,7 @@ RSpec.describe Argon do
         state_machine state: {
           states: {
             initial: 1,
-            final: 2,
+            final: 2
           },
           events: [
             :move
@@ -1595,11 +1600,11 @@ RSpec.describe Argon do
           parameters: {
             foo_message: {
               name: :message,
-              check: ->(object) { true },
-            },
+              check: ->(object) { true }
+            }
           },
           on_successful_transition: false,
-          on_failed_transition: false,
+          on_failed_transition: false
         }
       end
 

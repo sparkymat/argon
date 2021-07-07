@@ -29,4 +29,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'rspec', '~> 3.10'
   spec.add_development_dependency 'symbolic_enum', '>= 1.1.5'
+  spec.add_development_dependency 'rubocop', '~> 1.17'
 end

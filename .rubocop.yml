@@ -1,0 +1,11 @@
+AllCops:
+  NewCops: enable
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/BlockLength:
+  Max: 40
+
+Layout/LineLength:
+  Max: 180
