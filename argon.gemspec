@@ -23,11 +23,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_development_dependency 'bundler', '~> 2.2'
-  spec.add_development_dependency 'pry'
-  spec.add_development_dependency 'pry-byebug'
-  spec.add_development_dependency 'rails'
-  spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'rspec', '~> 3.10'
-  spec.add_development_dependency 'symbolic_enum', '>= 1.1.5'
   spec.add_development_dependency 'rubocop', '~> 1.17'
+  spec.add_development_dependency 'pry-byebug'
 end
